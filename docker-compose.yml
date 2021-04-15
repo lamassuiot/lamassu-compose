@@ -208,8 +208,7 @@ services:
   
   ca:
     build:
-      context: https://github.com/lamassuiot/enroller.git#develop
-      dockerfile: Dockerfile.ca
+      context: https://github.com/lamassuiot/lamassu-ca.git#develop
     environment:
       CA_PORT: '${CA_PORT}'
       CA_VAULTADDRESS: '${VAULT_API_ADDR}'
@@ -234,7 +233,7 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${ENROLLER_PATH}/certs:${CA_CERTSPATH}'
+      - '${CA_PATH}/certs:${CA_CERTSPATH}'
     networks:
       - lamassu-net
     ports:

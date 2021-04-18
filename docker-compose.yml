@@ -11,15 +11,16 @@ volumes:
   scep_pg_data:
   mosquitto_data:
   elastic_data:
+  fluentd_data:
 
 services:
   consul-server:
     image: consul:latest
+    environment: 
+      CONSUL_LOCAL_CONFIG: '${CONSUL_LOCAL_CONFIG}'
     volumes:
-      - '${CONSUL_PATH}/config/consul:/consul/config'
       - 'consul_server_data:/consul/data'
-      - '${CONSUL_PATH}/certs/consul/consul-server.crt:/consul/tls/tls.crt'
-      - '${CONSUL_PATH}/certs/consul/consul-server.key:/consul/tls/tls.key'
+      - './lamassu/consul-server_certs:/consul/data/tls'
     ports:
       - ${CONSUL_PORT}:${CONSUL_PORT}
       - ${CONSUL_HTTPS_PORT}:${CONSUL_HTTPS_PORT}
@@ -42,7 +43,7 @@ services:
       VAULT_LOCAL_CONFIG: '${VAULT_LOCAL_CONFIG}'
       VAULT_API_ADDR: '${VAULT_API_ADDR}'
     volumes:
-      - '${VAULT_PATH}/certs/vault:/vault/tls'
+      - './lamassu/vault_certs:/vault/tls'
     ports:
       - ${VAULT_PORT}:${VAULT_PORT}
     command: vault server -config /vault/config
@@ -61,7 +62,8 @@ services:
         tag: '{{.Name}}'
   
   keycloak:
-    image: 'jboss/keycloak:latest'
+    build:
+      context: https://github.com/lamassuiot/lamassu-auth.git#develop
     environment:
       DB_VENDOR: '${KEYCLOAK_DB_VENDOR}'
       DB_ADDR: '${KEYCLOAK_DB_ADDR}'
@@ -70,8 +72,10 @@ services:
       DB_PASSWORD: '${KEYCLOAK_DB_PASSWORD}'
       KEYCLOAK_USER: '${KEYCLOAK_USER}'
       KEYCLOAK_PASSWORD: '${KEYCLOAK_PASSWORD}'
+      KEYCLOAK_IMPORT: '/tmp/lamassu.json'
     volumes:
-      - '${KEYCLOAK_PATH}/certs:/etc/x509/https'
+      - './lamassu/keycloak_certs/keycloak.crt:/etc/x509/https/tls.crt'
+      - './lamassu/keycloak_certs/keycloak.key:/etc/x509/https/tls.key'
     ports:
       - ${KEYCLOAK_PORT}:${KEYCLOAK_PORT}
       - ${KEYCLOAK_HTTPS_PORT}:${KEYCLOAK_HTTPS_PORT}
@@ -106,7 +110,7 @@ services:
         fluentd-async-connect: 'true'
         tag: '{{.Name}}'
 
-  scep:
+  enrollerscep:
     build: 
       context: https://github.com/lamassuiot/enroller.git#develop
       dockerfile: Dockerfile.scep
@@ -120,22 +124,22 @@ services:
       SCEP_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
       SCEP_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
       SCEP_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
-      SCEP_KEYCLOAKHOSTNAME: '${KEYCLOAKHOSTNAME}'
-      SCEP_KEYCLOAKPORT: '${KEYCLOAKPORT}'
-      SCEP_KEYCLOAKPROTOCOL: '${KEYCLOAKPROTOCOL}'
+      SCEP_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      SCEP_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      SCEP_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
       SCEP_KEYCLOAKCA: '${ENROLLERSCEP_KEYCLOAKCA}'
-      SCEP_KEYCLOAKREALM: '${KEYCLOAKREALM}'
+      SCEP_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       SCEP_CERTFILE: '${ENROLLERSCEP_CERTFILE}'
       SCEP_KEYFILE: '${ENROLLERSCEP_KEYFILE}'
-      SCEP_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEP_CONSULHOST: '${CONSULHOST}'
-      SCEP_CONSULPORT: '${CONSULPORT}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEP_CONSULCA: '${ENROLLERSCEP_CONSULCA}'
       JAEGER_SERVICE_NAME: '${ENROLLERSCEP_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${ENROLLER_PATH}/certs:${ENROLLERSCEP_CERTSPATH}'
+      - './lamassu/enrollerscep_certs:/certs'
     networks:
       - lamassu-net
     ports:
@@ -165,31 +169,29 @@ services:
       ENROLLER_POSTGRESPASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
       ENROLLER_POSTGRESHOSTNAME: '${ENROLLER_POSTGRESHOSTNAME}'
       ENROLLER_POSTGRESPORT: '${ENROLLER_POSTGRESPORT}'
-      ENROLLER_KEYCLOAKHOSTNAME: '${KEYCLOAKHOSTNAME}'
-      ENROLLER_KEYCLOAKPORT: '${KEYCLOAKPORT}'
-      ENROLLER_KEYCLOAKREALM: '${KEYCLOAKREALM}'
-      ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAKPROTOCOL}'
+      ENROLLER_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      ENROLLER_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      ENROLLER_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
+      ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
       ENROLLER_KEYCLOAKCA: '${ENROLLER_KEYCLOAKCA}'
       ENROLLER_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
       ENROLLER_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
       ENROLLER_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
-      ENROLLER_CAPATH: '${ENROLLER_CAPATH}'
       ENROLLER_CACERTFILE: '${ENROLLER_CACERTFILE}'
       ENROLLER_CAKEYFILE: '${ENROLLER_CAKEYFILE}'
       ENROLLER_CERTFILE: '${ENROLLER_CERTFILE}'
       ENROLLER_KEYFILE: '${ENROLLER_KEYFILE}'
       ENROLLER_OCSPSERVER: '${ENROLLER_OCSPSERVER}'
-      ENROLLER_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      ENROLLER_CONSULHOST: '${CONSULHOST}'
-      ENROLLER_CONSULPORT: '${CONSULPORT}'
+      ENROLLER_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      ENROLLER_CONSULHOST: '${CONSUL_HOST}'
+      ENROLLER_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       ENROLLER_CONSULCA: '${ENROLLER_CONSULCA}'
       JAEGER_SERVICE_NAME: '${ENROLLER_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
       - 'enroller_csr_store:${ENROLLER_HOMEPATH}'
-      - '${ENROLLER_PATH}/ca:${ENROLLER_CAPATH}'
-      - '${ENROLLER_PATH}/certs:${ENROLLER_CERTSPATH}'
+      - './lamassu/enroller_certs:/certs'
     depends_on:
       - enrollerdb
       - consul-server
@@ -217,23 +219,23 @@ services:
       CA_VAULTCA: '${CA_VAULTCA}'
       CA_CERTFILE: '${CA_CERTFILE}'
       CA_KEYFILE: '${CA_KEYFILE}'
-      CA_KEYCLOAKHOSTNAME: '${KEYCLOAKHOSTNAME}'
-      CA_KEYCLOAKPORT: '${KEYCLOAKPORT}'
-      CA_KEYCLOAKREALM: '${KEYCLOAKREALM}'
+      CA_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      CA_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      CA_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       CA_KEYCLOAKCA: '${CA_KEYCLOAKCA}'
-      CA_KEYCLOAKPROTOCOL: '${KEYCLOAKPROTOCOL}'
+      CA_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
       CA_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
       CA_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
       CA_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
-      CA_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      CA_CONSULHOST: '${CONSULHOST}'
-      CA_CONSULPORT: '${CONSULPORT}'
+      CA_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      CA_CONSULHOST: '${CONSUL_HOST}'
+      CA_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       CA_CONSULCA: '${CA_CONSULCA}'
       JAEGER_SERVICE_NAME: '${CA_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${CA_PATH}/certs:${CA_CERTSPATH}'
+      - './lamassu/ca_certs:/certs'
     networks:
       - lamassu-net
     ports:
@@ -254,7 +256,7 @@ services:
     build:
       context: https://github.com/lamassuiot/enroller-ui.git#develop
     volumes:
-      - '${ENROLLER_FRONTEND_PATH}/certs:/etc/nginx/certs/server'
+      - './lamassu/enrollerui_certs:/etc/nginx/certs/server'
     networks:
       - lamassu-net
     ports:
@@ -269,14 +271,15 @@ services:
         tag: '{{.Name}}'
   
   enrollerdb:
-    image: 'postgres:latest'
+    build:
+      context: https://github.com/lamassuiot/enroller.git#develop
+      dockerfile: Dockerfile.enrollerdb
     environment:
       POSTGRES_DB: '${ENROLLER_POSTGRESDB}'
       POSTGRES_USER: '${ENROLLER_POSTGRESUSER}'
       POSTGRES_PASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
     volumes:
       - 'enroller_pg_data:/var/lib/postgresql/data'
-      - '${ENROLLER_PATH}/db/create.sql:/docker-entrypoint-initdb.d/create.sql'
     networks:
       - lamassu-net
     depends_on:
@@ -297,29 +300,24 @@ services:
       ENROLLER_UIHOST: '${MANUFACTURING_UIHOST}'
       ENROLLER_UIPORT: '${MANUFACTURING_UIPORT}'
       ENROLLER_UIPROTOCOL: '${MANUFACTURING_UIPROTOCOL}'
-      ENROLLER_POSTGRESUSER: '${ENROLLER_POSTGRESUSER}'
-      ENROLLER_POSTGRESDB: '${ENROLLER_POSTGRESDB}'
-      ENROLLER_POSTGRESPASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
-      ENROLLER_POSTGRESHOSTNAME: '${ENROLLER_POSTGRESHOSTNAME}'
-      ENROLLER_POSTGRESPORT: '${ENROLLER_POSTGRESPORT}'
-      ENROLLER_KEYCLOAKHOSTNAME: '${KEYCLOAKHOSTNAME}'
-      ENROLLER_KEYCLOAKPORT: '${KEYCLOAKPORT}'
-      ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAKPROTOCOL}'
-      ENROLLER_KEYCLOAKREALM: '${KEYCLOAKREALM}'
+      ENROLLER_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      ENROLLER_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
+      ENROLLER_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       ENROLLER_KEYCLOAKCA: '${MANUFACTURINGENROLL_KEYCLOAKCA}'
       ENROLLER_CERTFILE: '${MANUFACTURINGENROLL_CERTFILE}'
       ENROLLER_KEYFILE: '${MANUFACTURINGENROLL_KEYFILE}'
       ENROLLER_PROXYADDRESS: '${MANUFACTURINGENROLL_PROXYADDRESS}'
       ENROLLER_PROXYCA: '${MANUFACTURINGENROLL_PROXYCA}'
-      ENROLLER_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      ENROLLER_CONSULHOST: '${CONSULHOST}'
-      ENROLLER_CONSULPORT: '${CONSULPORT}'
+      ENROLLER_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      ENROLLER_CONSULHOST: '${CONSUL_HOST}'
+      ENROLLER_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       ENROLLER_CONSULCA: '${MANUFACTURINGENROLL_CONSULCA}'
       JAEGER_SERVICE_NAME: '${MANUFACTURINGENROLL_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - ${DEVICE_MANUFACTURING_PATH}/certs:${MANUFACTURINGENROLL_CERTSPATH}
+      - './lamassu/manufacturingenroll_certs:/certs'
     ports:
       - ${MANUFACTURINGENROLL_PORT}:${MANUFACTURINGENROLL_PORT}
     networks:
@@ -346,25 +344,25 @@ services:
       MANUFACTURING_UIHOST: '${MANUFACTURING_UIHOST}'
       MANUFACTURING_UIPORT: '${MANUFACTURING_UIPORT}'
       MANUFACTURING_UIPROTOCOL: '${MANUFACTURING_UIPROTOCOL}'
-      MANUFACTURING_KEYCLOAKHOSTNAME: '${KEYCLOAKHOSTNAME}'
-      MANUFACTURING_KEYCLOAKPORT: '${KEYCLOAKPORT}'
-      MANUFACTURING_KEYCLOAKPROTOCOL: '${KEYCLOAKPROTOCOL}'
-      MANUFACTURING_KEYCLOAKREALM: '${KEYCLOAKREALM}'
+      MANUFACTURING_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      MANUFACTURING_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      MANUFACTURING_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
+      MANUFACTURING_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       MANUFACTURING_KEYCLOAKCA: '${MANUFACTURING_KEYCLOAKCA}'
       MANUFACTURING_CERTFILE: '${MANUFACTURING_CERTFILE}'
       MANUFACTURING_KEYFILE: '${MANUFACTURING_KEYFILE}'
       MANUFACTURING_AUTHKEYFILE: '${MANUFACTURING_AUTHKEYFILE}'
       MANUFACTURING_PROXYADDRESS: '${MANUFACTURING_PROXYADDRESS}'
       MANUFACTURING_PROXYCA: '${MANUFACTURING_PROXYCA}'
-      MANUFACTURING_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      MANUFACTURING_CONSULHOST: '${CONSULHOST}'
-      MANUFACTURING_CONSULPORT: '${CONSULPORT}'
+      MANUFACTURING_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      MANUFACTURING_CONSULHOST: '${CONSUL_HOST}'
+      MANUFACTURING_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       MANUFACTURING_CONSULCA: '${MANUFACTURING_CONSULCA}'
       JAEGER_SERVICE_NAME: '${MANUFACTURING_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${DEVICE_MANUFACTURING_PATH}/certs:${MANUFACTURING_CERTSPATH}'
+      - './lamassu/manufacturing_certs:/certs'
     ports:
       - ${MANUFACTURING_PORT}:${MANUFACTURING_PORT}
     networks:
@@ -385,7 +383,7 @@ services:
     build:
       context: https://github.com/lamassuiot/device-manufacturing-system-ui.git#develop
     volumes:
-      - '${DEVICE_MANUFACTURING_FRONTEND}/certs:/etc/nginx/certs/server'
+      - './lamassu/manufacturingui_certs:/etc/nginx/certs/server'
     ports:
       - ${MANUFACTURING_UIPORT}:443
     networks:
@@ -405,9 +403,9 @@ services:
       dockerfile: Dockerfile.extension
     environment:
       SCEPEXTENSION_PORT: '${SCEPEXTENSION_PORT}'
-      SCEPEXTENSION_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEPEXTENSION_CONSULHOST: '${CONSULHOST}'
-      SCEPEXTENSION_CONSULPORT: '${CONSULPORT}'
+      SCEPEXTENSION_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEPEXTENSION_CONSULHOST: '${CONSUL_HOST}'
+      SCEPEXTENSION_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEPEXTENSION_CONSULCA: '${SCEPEXTENSION_CONSULCA}'
       SCEPEXTENSION_CERTFILE: '${SCEPEXTENSION_CERTFILE}'
       SCEPEXTENSION_KEYFILE: '${SCEPEXTENSION_KEYFILE}'
@@ -420,7 +418,7 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - ${SCEP_PATH}/certs:/certs
+      - './lamassu/scepextension_certs:/certs'
     ports:
       - ${SCEPEXTENSION_PORT}:${SCEPEXTENSION_PORT}
     networks:
@@ -429,6 +427,10 @@ services:
     depends_on: 
       - consul-server
       - fluentd
+      - scepca1
+      - scepca2
+      - scepca3
+      - scepca4
     logging:
       driver: fluentd
       options:
@@ -440,9 +442,7 @@ services:
     build:
       context: https://github.com/lamassuiot/scep.git#:proxy
     volumes:
-      - ${SCEP_PATH}/proxy/log:/var/log/nginx
-      - ${SCEP_PATH}/proxy/server/certs:${NGINX_SERVER_CERTS}
-      - ${SCEP_PATH}/proxy/client/certs:${NGINX_CLIENT_CERTS}
+      - './lamassu/scepproxy_certs:/etc/nginx/certs/'
     networks:
       - lamassu-net
     depends_on:
@@ -471,9 +471,9 @@ services:
       SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
       SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
       SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEP_CONSULHOST: '${CONSULHOST}'
-      SCEP_CONSULPORT: '${CONSULPORT}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEP_CONSULCA: '${SCEP_CONSULCA}'
       SCEP_HOST: '${SCEP_CA4_HOST}'
       SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
@@ -481,8 +481,9 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${SCEP_PATH}/ca:${SCEP_FILE_DEPOT}'
-      - '${SCEP_PATH}/certs:/certs'
+      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
+      - './lamassu/scep_certs/scep.key:/ca/ca.key'
+      - './lamassu/scep_certs:/certs'
     networks:
       - lamassu-net
     restart: on-failure
@@ -514,9 +515,9 @@ services:
       SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
       SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
       SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEP_CONSULHOST: '${CONSULHOST}'
-      SCEP_CONSULPORT: '${CONSULPORT}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEP_CONSULCA: '${SCEP_CONSULCA}'
       SCEP_HOST: '${SCEP_CA3_HOST}'
       SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
@@ -524,8 +525,9 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${SCEP_PATH}/ca:${SCEP_FILE_DEPOT}'
-      - '${SCEP_PATH}/certs:/certs'
+      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
+      - './lamassu/scep_certs/scep.key:/ca/ca.key'
+      - './lamassu/scep_certs:/certs'
     networks:
       - lamassu-net
     restart: on-failure
@@ -557,9 +559,9 @@ services:
       SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
       SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
       SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEP_CONSULHOST: '${CONSULHOST}'
-      SCEP_CONSULPORT: '${CONSULPORT}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEP_CONSULCA: '${SCEP_CONSULCA}'
       SCEP_HOST: '${SCEP_CA2_HOST}'
       SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
@@ -567,8 +569,9 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${SCEP_PATH}/ca:${SCEP_FILE_DEPOT}'
-      - '${SCEP_PATH}/certs:/certs'
+      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
+      - './lamassu/scep_certs/scep.key:/ca/ca.key'
+      - './lamassu/scep_certs:/certs'
     networks:
       - lamassu-net
     restart: on-failure
@@ -600,9 +603,9 @@ services:
       SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
       SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
       SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      SCEP_CONSULHOST: '${CONSULHOST}'
-      SCEP_CONSULPORT: '${CONSULPORT}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       SCEP_CONSULCA: '${SCEP_CONSULCA}'
       SCEP_HOST: '${SCEP_CA1_HOST}'
       SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
@@ -610,8 +613,9 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${SCEP_PATH}/ca:${SCEP_FILE_DEPOT}'
-      - '${SCEP_PATH}/certs:/certs'
+      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
+      - './lamassu/scep_certs/scep.key:/ca/ca.key'
+      - './lamassu/scep_certs:/certs'
     networks:
       - lamassu-net
     restart: on-failure
@@ -628,14 +632,15 @@ services:
         tag: '{{.Name}}'
 
   scepdb:
-    image: 'postgres:latest'
+    build:
+      context: https://github.com/lamassuiot/scep.git
+      dockerfile: Dockerfile.scepdb
     environment:
       POSTGRES_DB: '${SCEP_POSTGRESDB}'
       POSTGRES_USER: '${SCEP_POSTGRESUSER}'
       POSTGRES_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
     volumes:
       - 'scep_pg_data:/var/lib/postgresql/data'
-      - '${SCEP_PATH}/db/create.sql:/docker-entrypoint-initdb.d/create.sql'
     networks:
       - lamassu-net
     depends_on:
@@ -651,9 +656,6 @@ services:
     build:
       context: https://github.com/lamassuiot/GOCSP-responder.git
     environment:
-      RESPONDER_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-      RESPONDER_VAULT_ROLE_ID: '${RESPONDER_VAULT_ROLE_ID}'
-      RESPONDER_VAULT_SECRET_ID: '${RESPONDER_VAULT_SECRET_ID}'
       RESPONDER_FILE_CA: '${RESPONDER_FILE_CA}'
       RESPONDER_KEY: '${RESPONDER_KEY}'
       RESPONDER_CERT: '${RESPONDER_CERT}'
@@ -663,16 +665,15 @@ services:
       RESPONDER_DB_HOST: '${ENROLLER_POSTGRESHOSTNAME}'
       RESPONDER_DB_PORT: '${ENROLLER_POSTGRESPORT}'
       RESPONDER_PORT: '${RESPONDER_PORT}'
-      RESPONDER_CONSUL_PROTOCOL: '${CONSULPROTOCOL}'
-      RESPONDER_CONSUL_HOST: '${CONSULHOST}'
-      RESPONDER_CONSUL_PORT: '${CONSULPORT}'
+      RESPONDER_CONSUL_PROTOCOL: '${CONSUL_PROTOCOL}'
+      RESPONDER_CONSUL_HOST: '${CONSUL_HOST}'
+      RESPONDER_CONSUL_PORT: '${CONSUL_HTTPS_PORT}'
       RESPONDER_CONSUL_CA: '${RESPONDER_CONSUL_CA}'
       JAEGER_SERVICE_NAME: '${RESPONDER_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${RESPONDER_PATH}/certs:${RESPONDER_CERTS_PATH}'
-      - '${RESPONDER_PATH}/ca:${RESPONDER_CA_PATH}'
+      - './lamassu/ocsp_certs:/certs'
     networks:
       - lamassu-net
     restart: on-failure
@@ -680,6 +681,7 @@ services:
       - scepdb
       - consul-server
       - fluentd
+      - scepproxy
     logging:
       driver: fluentd
       options:
@@ -698,16 +700,15 @@ services:
       DEVICE_CAPATH: '${DEVICE_CAPATH}'
       DEVICE_CERTFILE: '${DEVICE_CERTFILE}'
       DEVICE_KEYFILE: '${DEVICE_KEYFILE}'
-      DEVICE_CONSULPROTOCOL: '${CONSULPROTOCOL}'
-      DEVICE_CONSULHOST: '${CONSULHOST}'
-      DEVICE_CONSULPORT: '${CONSULPORT}'
+      DEVICE_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      DEVICE_CONSULHOST: '${CONSUL_HOST}'
+      DEVICE_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       DEVICE_CONSULCA: '${DEVICE_CONSULCA}'
       JAEGER_SERVICE_NAME: '${DEVICE_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
-      - '${DEVICE_VIRTUAL_PATH}/ca/cacert.pem:${DEVICE_CAPATH}'
-      - '${DEVICE_VIRTUAL_PATH}/certs:${DEVICE_CERTSPATH}'
+      - './lamassu/device_certs:/certs'
     ports:
       - ${DEVICE_PORT}:${DEVICE_PORT}
     networks:
@@ -727,7 +728,7 @@ services:
     build:
       context: https://github.com/lamassuiot/device-virtual-ui.git#develop
     volumes:
-      - '${DEVICE_VIRTUAL_FRONTEND}/certs:/etc/nginx/certs/server'
+      - './lamassu/deviceui_certs:/etc/nginx/certs/server'
     ports:
       - ${DEVICE_UIPORT}:443
     networks:
@@ -742,11 +743,11 @@ services:
         tag: '{{.Name}}'
   
   mosquitto:
-    image: eclipse-mosquitto:latest
+    build:
+      context: https://github.com/lamassuiot/lamassu-mqtt-gateway.git#develop
     volumes:
-      - '${MQTT_GATEWAY_PATH}/certs:/mosquitto/certs'
-      - '${MQTT_GATEWAY_PATH}/capath:/mosquitto/ca'
-      - '${MQTT_GATEWAY_PATH}/config:/mosquitto/config'
+      - './lamassu/mosquitto_certs:/mosquitto/certs'
+      - './lamassu/mosquitto_ca:/mosquitto/ca'
       - 'mosquitto_data:/mosquitto/data'
     ports:
       - ${MOSQUITTO_PORT}:${MOSQUITTO_PORT}
@@ -763,12 +764,12 @@ services:
         tag: '{{.Name}}'
     
   prometheus:
-    image: prom/prometheus:latest
+    build:
+      context: https://github.com/lamassuiot/lamassu-monitoring.git#develop
     ports:
       - ${PROMETHEUS_PORT}:${PROMETHEUS_PORT}
     volumes:
-      - '${PROMETHEUS_PATH}/config/prometheus.yml:/etc/prometheus/prometheus.yml'
-      - '${PROMETHEUS_PATH}/certs/consul-server.crt:/etc/prometheus/certs/consul-server.crt'
+      - './lamassu/prometheus_certs/consul-server.crt:/etc/prometheus/certs/consul-server.crt'
     networks:
       lamassu-net:
     depends_on:
@@ -783,17 +784,17 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     environment:
-      SPAN_STORAGE_TYPE: 'elasticsearch'
+      SPAN_STORAGE_TYPE: '${SPAN_STORAGE_TYPE}'
       ES_USERNAME: '${ELASTIC_USERNAME}'
       ES_PASSWORD: '${ELASTIC_PASSWORD}'
-      ES_SERVER_URLS: 'https://elastic:9200'
+      ES_SERVER_URLS: '${ES_SERVER_URLS}'
       ES_TLS_ENABLED: 'true'
-      ES_TLS_CA: '${JAEGER_CERTS_DIR}/elastic.crt'
-      ES_TLS_CERT: '${JAEGER_CERTS_DIR}/jaeger.crt'
-      ES_TLS_KEY: '${JAEGER_CERTS_DIR}/jaeger.key'
+      ES_TLS_CA: '${ES_TLS_CA}'
+      ES_TLS_CERT: '${ES_TLS_CERT}'
+      ES_TLS_KEY: '${ES_TLS_KEY}'
       ES_TLS_SERVER_NAME: '${ES_TLS_SERVER_NAME}'
     volumes:
-      - '${JAEGER_PATH}/certs/jaeger:${JAEGER_CERTS_DIR}'
+      - './lamassu/jaeger_certs:/certs'
     ports:
       - 5775:5775/udp
       - 6831:6831/udp
@@ -817,17 +818,17 @@ services:
         tag: '{{.Name}}'
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    build:
+      context: https://github.com/lamassuiot/lamassu-tracing.git#develop
     environment:
       node.name: 'elastic'
       discovery.type: 'single-node'
-      ELASTIC_CERTS_DIR: '${ELASTIC_CERTS_DIR}'
+      ELASTIC_CERTS_DIR: '/usr/share/elasticsearch/config'
       ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
     volumes:
       - 'elastic_data:/usr/share/elasticsearch/data'
-      - '${ELASTIC_PATH}/configs/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro'
-      - '${ELASTIC_PATH}/certs/elastic/elastic.crt:${ELASTIC_CERTS_DIR}/elastic.crt'
-      - '${ELASTIC_PATH}/certs/elastic/elastic.key:${ELASTIC_CERTS_DIR}/elastic.key'
+      - './lamassu/elastic_certs/elastic.crt:/usr/share/elasticsearch/config/elastic.crt'
+      - './lamassu/elastic_certs/elastic.key:/usr/share/elasticsearch/config/elastic.key'
     ports:
       - 9200:9200
       - 9300:9300
@@ -848,6 +849,6 @@ services:
       - ${FLUENTD_PORT}:${FLUENTD_PORT}
       - ${FLUENTD_PORT}:${FLUENTD_PORT}/udp
     volumes:
-      - '${FLUENTD_PATH}/data:/fluentd/log'
+      - 'fluentd_data:/fluentd/log'
     networks:
       - lamassu-net

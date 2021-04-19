@@ -1,0 +1,10 @@
+{
+    "common_name": "LKS Next Root CA 1",
+    "key_type": "rsa",
+    "key_bits": "4096",
+    "organization": "LKS Next, S. Coop",
+    "country": "ES",
+    "ttl": "262800h",
+    "province": "Gipuzkoa",
+    "locality": "Arrasate"
+}

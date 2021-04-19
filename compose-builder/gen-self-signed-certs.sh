@@ -36,7 +36,7 @@ done
 # Create certificate for OCSP signed by Enroller
 openssl genrsa -out lamassu/ocsp_certs/ocsp.key 4096
 openssl req -new -key lamassu/ocsp_certs/ocsp.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=ocsp" -out lamassu/ocsp_certs/ocsp.csr
-openssl x509 -req -in lamassu/ocsp_certs/ocsp.csr -CA lamassu/enroller_certs/enroller.crt -CAkey lamassu/enroller_certs/enroller.key -CAcreateserial -extfile openssl.conf -extensions ocsp -out lamassu/ocsp_certs/ocsp.crt
+openssl x509 -req -in lamassu/ocsp_certs/ocsp.csr -CA lamassu/enroller_certs/enroller.crt -CAkey lamassu/enroller_certs/enroller.key -CAcreateserial -extfile compose-builder/openssl.conf -extensions ocsp -out lamassu/ocsp_certs/ocsp.crt
 
 # Distribute SCEP Proxy and Enroller certificates to Device Manufacturing System
 cp lamassu/scepproxy_certs/scepproxy.crt lamassu/manufacturing_certs/

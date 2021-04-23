@@ -21,7 +21,7 @@ function provision() {
         p="$1/${f%.json}"
         c=$(cat $f | envsubst)
         echo "Provisioning $p"
-        curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --data "${c}" "${VAULT_ADDR}/v1/${p}"
+        curl -k --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --data "${c}" "${VAULT_ADDR}/v1/${p}"
     done
     popd > /dev/null
     set -e 

@@ -87,7 +87,7 @@ openssl rehash lamassu/mosquitto_ca
 7. Create keys and CSR for the Device Manufacturing System user:
 ```
 openssl genrsa -out <username>.key 4096
-openssl req -new -key <username>.csr -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=<username>" -out <username>.csr
+openssl req -new -key <username>.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=<username>" -out <username>.csr
 
 # Copy key to volume path
 cp <username>.key lamassu/manufacturing_certs/<username>.key

@@ -63,7 +63,7 @@ services:
   
   keycloak:
     build:
-      context: https://github.com/lamassuiot/lamassu-auth.git
+      context: https://github.com/lamassuiot/lamassu-auth.git#main
     environment:
       DB_VENDOR: '${KEYCLOAK_DB_VENDOR}'
       DB_ADDR: '${KEYCLOAK_DB_ADDR}'

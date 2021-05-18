@@ -112,7 +112,7 @@ services:
 
   enrollerscep:
     build: 
-      context: https://github.com/lamassuiot/enroller.git
+      context: https://github.com/lamassuiot/enroller.git#main
       dockerfile: Dockerfile.scep
     environment:
       SCEP_PORT: '${ENROLLERSCEP_PORT}'
@@ -159,7 +159,7 @@ services:
   
   enroller:
     build:
-      context: https://github.com/lamassuiot/enroller.git
+      context: https://github.com/lamassuiot/enroller.git#main
       dockerfile: Dockerfile.enroller
     environment:
       ENROLLER_PORT: '${ENROLLER_PORT}'
@@ -210,7 +210,7 @@ services:
   
   ca:
     build:
-      context: https://github.com/lamassuiot/lamassu-ca.git
+      context: https://github.com/lamassuiot/lamassu-ca.git#main
     environment:
       CA_PORT: '${CA_PORT}'
       CA_VAULTADDRESS: '${VAULT_API_ADDR}'
@@ -254,7 +254,7 @@ services:
 
   enrollerui:
     build:
-      context: https://github.com/lamassuiot/enroller-ui.git
+      context: https://github.com/lamassuiot/enroller-ui.git#main
     volumes:
       - './lamassu/enrollerui_certs:/etc/nginx/certs/server'
     networks:
@@ -272,7 +272,7 @@ services:
   
   enrollerdb:
     build:
-      context: https://github.com/lamassuiot/enroller.git
+      context: https://github.com/lamassuiot/enroller.git#main
       dockerfile: Dockerfile.enrollerdb
     environment:
       POSTGRES_DB: '${ENROLLER_POSTGRESDB}'
@@ -293,7 +293,7 @@ services:
 
   manufacturingenroll:
     build:
-      context: https://github.com/lamassuiot/device-manufacturing-system.git
+      context: https://github.com/lamassuiot/device-manufacturing-system.git#main
       dockerfile: Dockerfile.manufacturingenroll
     environment:
       ENROLLER_PORT: '${MANUFACTURINGENROLL_PORT}'
@@ -337,7 +337,7 @@ services:
 
   manufacturing:
     build:
-      context: https://github.com/lamassuiot/device-manufacturing-system.git
+      context: https://github.com/lamassuiot/device-manufacturing-system.git#main
       dockerfile: Dockerfile.manufacturing
     environment:
       MANUFACTURING_PORT: '${MANUFACTURING_PORT}'
@@ -381,7 +381,7 @@ services:
   
   manufacturingui:
     build:
-      context: https://github.com/lamassuiot/device-manufacturing-system-ui.git
+      context: https://github.com/lamassuiot/device-manufacturing-system-ui.git#main
     volumes:
       - './lamassu/manufacturingui_certs:/etc/nginx/certs/server'
     ports:
@@ -691,7 +691,7 @@ services:
   
   device:
     build:
-      context: https://github.com/lamassuiot/device-virtual.git
+      context: https://github.com/lamassuiot/device-virtual.git#main
     environment:
       DEVICE_PORT: '${DEVICE_PORT}'
       DEVICE_UIHOST: '${DEVICE_UIHOST}'
@@ -726,7 +726,7 @@ services:
     
   deviceui:
     build:
-      context: https://github.com/lamassuiot/device-virtual-ui.git
+      context: https://github.com/lamassuiot/device-virtual-ui.git#main
     volumes:
       - './lamassu/deviceui_certs:/etc/nginx/certs/server'
     ports:
@@ -744,7 +744,7 @@ services:
   
   mosquitto:
     build:
-      context: https://github.com/lamassuiot/lamassu-mqtt-gateway.git
+      context: https://github.com/lamassuiot/lamassu-mqtt-gateway.git#main
     volumes:
       - './lamassu/mosquitto_certs:/mosquitto/certs'
       - './lamassu/mosquitto_ca:/mosquitto/ca'
@@ -765,7 +765,7 @@ services:
     
   prometheus:
     build:
-      context: https://github.com/lamassuiot/lamassu-monitoring.git
+      context: https://github.com/lamassuiot/lamassu-monitoring.git#main
     ports:
       - ${PROMETHEUS_PORT}:${PROMETHEUS_PORT}
     volumes:
@@ -819,7 +819,7 @@ services:
 
   elastic:
     build:
-      context: https://github.com/lamassuiot/lamassu-tracing.git
+      context: https://github.com/lamassuiot/lamassu-tracing.git#main
     environment:
       node.name: 'elastic'
       discovery.type: 'single-node'

@@ -11,7 +11,9 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 ## Usage
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
-2. Fill the next empty secret environment variables in `.env` file:
+2. Install the `jq` tool. It will be used later 
+3. Fill the next empty secret environment variables in `.env` file:
+
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
 KEYCLOAK_DB_PASSWORD=<KEYCLOAK_DB_PASSWORD> //Keycloak database user password.
@@ -27,22 +29,30 @@ DEVICES_POSTGRESPASSWORD=<DEVICES_POSTGRESPASSWORD> //Device Manager database pa
 ELASTIC_USERNAME=<ELASTIC_USERNAME> //Elasticsearch username.
 ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
 ```
-3. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script and providing the next environment variables:
-    ```
-    EXPORT C=ES //Country code.
-    EXPORT ST=Guipuzcoa //State.
-    EXPORT L=Arrasate //Locality.
-    EXPORT O=Lamassu IoT //Organization.
-    EXPORT DOMAIN=lamassu.com
-    ```
-4. Provision and configure Vault secret engine:
+
+4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script and providing the next environment variables:
+```
+export C=ES //Country code.
+export ST=Guipuzcoa //State.
+export L=Arrasate //Locality.
+export O=Lamassu IoT //Organization.
+export DOMAIN=lamassu.com
+```
+
+5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.com. This repo provides a docker-compose template file with some placeholder (`HOSTNAME_TO_BE_REPLACED`) values that **must** be replaced. In order to do so, run the follwoing script:
+
+```
+
+```
+ 
+6. Provision and configure Vault secret engine:
     1. Run Vault: `docker-compose up -d vault`. 
     2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
     3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
     ```
-    VAULT_CA_FILE=lamassu/vaul_certs/vault.crt //Vault server certificate CA to trust it.
-    VAULT_TOKEN=<VAULT_TOKEN> //Vault root token.
-    VAULT_ADDR=https://vault:8200 //Vault server address. You may need to change vault address.
+    export VAULT_CA_FILE=lamassu/vaul_certs/vault.crt //Vault server certificate CA to trust it.
+    export VAULT_TOKEN=<VAULT_TOKEN> //Vault root token.
+    export VAULT_ADDR=https://vault:8200 //Vault server address. You may need to change vault address.
     ```
     4. Vault will be provisioned with 4 Root CAs, AppRole authentication method and one role and policy for each service or container that needs to exchange data with it.
     5. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
@@ -55,7 +65,7 @@ ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
     CA_VAULTSECRETID=<CA_VAULTSECRETID>
     
     ```
-5. Configure Keycloak:
+7. Configure Keycloak:
     1. Run Keycloak: `docker-compose up -d keycloak`.
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
     3. Create a user with admin role to perform Enroller administrator tasks.

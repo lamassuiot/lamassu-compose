@@ -449,6 +449,7 @@ services:
     #     fluentd-async-connect: 'true'
     #     tag: '{{.Name}}'
     
+    
   fluentd:
     image: fluent/fluentd:v1.13-1
     ports:

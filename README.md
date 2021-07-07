@@ -39,7 +39,7 @@ export O=Lamassu IoT
 export DOMAIN=lamassu.dev
 ```
 
-5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from the `docker-compose.yml` and `.env` file**:
+5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
 
 ```
 sed -i 's/lamassu.dev/mydomain.dev/g' .env

@@ -12,7 +12,7 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin **:
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -61,7 +61,7 @@ sed -i 's/lamassu.dev/mydomain.dev/g' .docker-compose.yml
     # Obtain CA Wrapper RoleID and SecretID
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/secret-id 
-    
+
     # Set RoleID and SecretID in .env file
     CA_VAULTROLEID=<CA_VAULTROLEID>
     CA_VAULTSECRETID=<CA_VAULTSECRETID>

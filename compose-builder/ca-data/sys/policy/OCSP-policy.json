@@ -1,0 +1,1 @@
+{"policy":"path \"Lamassu-Root-CA1-RSA4096/cert/ca\" {\n capabilities=[\"read\"]\n}\npath \"Lamassu-Root-CA2-RSA2048/cert/ca\" {\n capabilities=[\"read\"]\n}\n path \"Lamassu-Root-CA3-ECC384/cert/ca\" {\n capabilities=[\"read\"]\n}\npath \"Lamassu-Root-CA4-ECC256/cert/ca\" {\n capabilities=[\"read\"]\n}"}

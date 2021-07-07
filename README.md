@@ -11,8 +11,8 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 ## Usage
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
-2. Install the `jq` tool. It will be used later 
-3. Fill the next empty secret environment variables in `.env` file:
+2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin **:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -32,17 +32,18 @@ ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
 
 4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script and providing the next environment variables:
 ```
-export C=ES //Country code.
-export ST=Guipuzcoa //State.
-export L=Arrasate //Locality.
-export O=Lamassu IoT //Organization.
-export DOMAIN=lamassu.com
+export C=ES
+export ST=Guipuzcoa
+export L=Arrasate
+export O=Lamassu IoT
+export DOMAIN=lamassu.dev
 ```
 
-5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.com. This repo provides a docker-compose template file with some placeholder (`HOSTNAME_TO_BE_REPLACED`) values that **must** be replaced. In order to do so, run the follwoing script:
+5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from the `docker-compose.yml` and `.env` file**:
 
 ```
-
+sed -i 's/lamassu.dev/mydomain.dev/g' .env
+sed -i 's/lamassu.dev/mydomain.dev/g' .docker-compose.yml
 ```
  
 6. Provision and configure Vault secret engine:
@@ -50,9 +51,9 @@ export DOMAIN=lamassu.com
     2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
     3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
     ```
-    export VAULT_CA_FILE=lamassu/vaul_certs/vault.crt //Vault server certificate CA to trust it.
-    export VAULT_TOKEN=<VAULT_TOKEN> //Vault root token.
-    export VAULT_ADDR=https://vault:8200 //Vault server address. You may need to change vault address.
+    export VAULT_CA_FILE=lamassu/vault_certs/vault.crt
+    export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
+    export VAULT_ADDR=https://lamassu.dev:8200
     ```
     4. Vault will be provisioned with 4 Root CAs, AppRole authentication method and one role and policy for each service or container that needs to exchange data with it.
     5. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
@@ -60,6 +61,7 @@ export DOMAIN=lamassu.com
     # Obtain CA Wrapper RoleID and SecretID
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/secret-id 
+    
     # Set RoleID and SecretID in .env file
     CA_VAULTROLEID=<CA_VAULTROLEID>
     CA_VAULTSECRETID=<CA_VAULTSECRETID>

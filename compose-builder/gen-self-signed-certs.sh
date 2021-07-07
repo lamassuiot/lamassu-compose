@@ -14,7 +14,7 @@ mkdir -p lamassu
 
 openssl genrsa -out lamassu/lamassu.key 4096
 chmod 640 lamassu/lamassu.key
-openssl req -new -x509 -key lamassu/lamassu.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=$DOMAIN" -addext "subjectAltName = DNS: $DOMAIN" -out lamassu/lamassu.crt
+openssl req -new -x509 -key lamassu/lamassu.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=$DOMAIN" -addext "subjectAltName = DNS:$DOMAIN, DNS:*.$DOMAIN" -out lamassu/lamassu.crt
 
 services=(ca consul-server device-manager elastic enroller jaeger keycloak ocsp prometheus ui vault)
 for s in "${services[@]}"; 

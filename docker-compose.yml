@@ -269,7 +269,7 @@ services:
       - vault
       - fluentd
     # logging:
-    #   driver: fluentd
+    #   driver: fluentd 
     #   options:
     #     fluentd-address: localhost:${FLUENTD_PORT}
     #     fluentd-async-connect: 'true'
@@ -301,6 +301,9 @@ services:
       DEVICES_CONSULHOST: '${CONSUL_HOST}'
       DEVICES_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       DEVICES_CONSULCA: '${DEVICES_CONSULCA}'
+
+      DEVICES_CACERTFILE: '${DEVICES_CACERTFILE}'
+      DEVICES_CASERVERADDR: '${DEVICES_CASERVERADDR}'
 
       JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: jaeger

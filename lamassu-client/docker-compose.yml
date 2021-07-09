@@ -8,8 +8,10 @@ services:
         - ./index.js:/app/index.js
         - ./devices-crypto-material:/app/devices-crypto-material
         - ./device-manager.crt:/app/device-manager-anchore.crt
-        - ./dms.crt:/app/dms.crt
-        - ./dms.key:/app/dms.key
+        - ./enrolled-dms.crt:/app/enrolled-dms.crt
+        - ./enrolled-dms.key:/app/enrolled-dms.key
+        - ./https.crt:/app/https.crt
+        - ./https.key:/app/https.key
     network_mode: "host"
     ports:
       - 5000:5000

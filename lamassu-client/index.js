@@ -4,24 +4,26 @@ const fs = require('fs');
 const exec = util.promisify(require("child_process").exec);
 
 const options = {
-  key: fs.readFileSync('/app/dms.key'),
-  cert: fs.readFileSync('/app/dms.crt')
+  key: fs.readFileSync('/app/https.key'),
+  cert: fs.readFileSync('/app/https.crt')
 };
 
 
 const server = https.createServer(options, async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*")
+
   if (req.url.startsWith("/dms-issue/") && req.method === "POST") {
     const cn_aps = req.url.split("/dms-issue/")[1]
     const cn=cn_aps.split("/")[0]
     const aps=cn_aps.split("/")[1]
 
     const CMD_GEN_CSR = 'openssl req -nodes -newkey rsa:2048 -keyout /app/devices-crypto-material/device-'+cn+'.key -out /app/devices-crypto-material/device-'+cn+'.csr -subj "/C=ES/ST=Gipuzkoa/L=Arrasate/O=Ikerlan/OU=ZPD/CN='+cn+'"'
-    const CMD_ENROLL = 'estclient enroll -server 0.0.0.0:9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps ;
+    const CMD_ENROLL = 'estclient enroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
 
     console.log(CMD_GEN_CSR);
     console.log(CMD_ENROLL);
 
-    const exec_res = await exec(CMD_GEN_CSR);
+    var exec_res = await exec(CMD_GEN_CSR);
     
     if (exec_res.error != null) {
       res.writeHead(500, { "Content-Type": "application/json" });

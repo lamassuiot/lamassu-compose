@@ -39,15 +39,23 @@ export O=Lamassu IoT
 export DOMAIN=lamassu.dev
 ```
 
-5. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
+5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `lamassu.dev` with your domain (The same as the exported DOMAIN env variable).**  
+```
+127.0.0.1   lamassu.dev
+```
+
+6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
 
 ```
-sed -i 's/lamassu.dev/mydomain.dev/g' .env
-sed -i 's/lamassu.dev/mydomain.dev/g' .docker-compose.yml
+sed -i 's/lamassu\.dev/mydomain.dev/g' .env
+sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
 ```
  
-6. Provision and configure Vault secret engine:
-    1. Run Vault: `docker-compose up -d vault`. 
+7. Provision and configure Vault secret engine:
+    1. Run Vault: 
+    ```
+    docker-compose up -d vault
+    ``` 
     2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
     3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
     ```
@@ -55,7 +63,7 @@ sed -i 's/lamassu.dev/mydomain.dev/g' .docker-compose.yml
     export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
     export VAULT_ADDR=https://lamassu.dev:8200
     ```
-    4. Vault will be provisioned with 4 Root CAs, AppRole authentication method and one role and policy for each service or container that needs to exchange data with it.
+    4. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
     5. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
     ```
     # Obtain CA Wrapper RoleID and SecretID
@@ -65,9 +73,9 @@ sed -i 's/lamassu.dev/mydomain.dev/g' .docker-compose.yml
     # Set RoleID and SecretID in .env file
     CA_VAULTROLEID=<CA_VAULTROLEID>
     CA_VAULTSECRETID=<CA_VAULTSECRETID>
-    
     ```
-7. Configure Keycloak:
+
+8. Configure Keycloak:
     1. Run Keycloak: `docker-compose up -d keycloak`.
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
     3. Create a user with admin role to perform Enroller administrator tasks.

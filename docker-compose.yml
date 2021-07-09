@@ -275,45 +275,45 @@ services:
     #     fluentd-async-connect: 'true'
     #     tag: '{{.Name}}'
 
-  # device-manager:
-  #   build:
-  #     context: https://github.com/lamassuiot/lamassu-device-manager.git#develop
-  #     dockerfile: Dockerfile.devices
-  #   environment:
-  #     DEVICES_PORT: '${DEVICES_PORT}'
+  device-manager:
+    build:
+      context: https://github.com/lamassuiot/lamassu-device-manager.git#main
+      dockerfile: Dockerfile.devices
+    environment:
+      DEVICES_PORT: '${DEVICES_PORT}'
 
-  #     DEVICES_CERTFILE: '${DEVICES_CERTFILE}'
-  #     DEVICES_KEYFILE: '${DEVICES_KEYFILE}'
+      DEVICES_CERTFILE: '${DEVICES_CERTFILE}'
+      DEVICES_KEYFILE: '${DEVICES_KEYFILE}'
 
-  #     DEVICES_POSTGRESDB: '${DEVICES_POSTGRESDB}'
-  #     DEVICES_POSTGRESUSER: '${DEVICES_POSTGRESUSER}'
-  #     DEVICES_POSTGRESPASSWORD: '${DEVICES_POSTGRESPASSWORD}'
-  #     DEVICES_POSTGRESHOSTNAME: device-manager-db
-  #     DEVICES_POSTGRESPORT: '${DEVICES_POSTGRESPORT}'
+      DEVICES_POSTGRESDB: '${DEVICES_POSTGRESDB}'
+      DEVICES_POSTGRESUSER: '${DEVICES_POSTGRESUSER}'
+      DEVICES_POSTGRESPASSWORD: '${DEVICES_POSTGRESPASSWORD}'
+      DEVICES_POSTGRESHOSTNAME: device-manager-db
+      DEVICES_POSTGRESPORT: '${DEVICES_POSTGRESPORT}'
 
-  #     DEVICES_KEYCLOAKPROTOCOL: '${DEVICES_KEYCLOAKPROTOCOL}'
-  #     DEVICES_KEYCLOAKHOSTNAME: '${DEVICES_KEYCLOAKHOSTNAME}'
-  #     DEVICES_KEYCLOAKPORT: '${DEVICES_KEYCLOAKPORT}'
-  #     DEVICES_KEYCLOAKCA: '${DEVICES_KEYCLOAKCA}'
-  #     DEVICES_KEYCLOAKREALM: '${DEVICES_KEYCLOAKREALM}'
+      DEVICES_KEYCLOAKPROTOCOL: '${DEVICES_KEYCLOAKPROTOCOL}'
+      DEVICES_KEYCLOAKHOSTNAME: '${DEVICES_KEYCLOAKHOSTNAME}'
+      DEVICES_KEYCLOAKPORT: '${DEVICES_KEYCLOAKPORT}'
+      DEVICES_KEYCLOAKCA: '${DEVICES_KEYCLOAKCA}'
+      DEVICES_KEYCLOAKREALM: '${DEVICES_KEYCLOAKREALM}'
 
-  #     DEVICES_CONSULPROTOCOL: '${DEVICES_CONSULPROTOCOL}'
-  #     DEVICES_CONSULHOST: '${CONSUL_HOST}'
-  #     DEVICES_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-  #     DEVICES_CONSULCA: '${DEVICES_CONSULCA}'
+      DEVICES_CONSULPROTOCOL: '${DEVICES_CONSULPROTOCOL}'
+      DEVICES_CONSULHOST: '${CONSUL_HOST}'
+      DEVICES_CONSULPORT: '${CONSUL_HTTPS_PORT}'
+      DEVICES_CONSULCA: '${DEVICES_CONSULCA}'
 
-  #     JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
-  #     JAEGER_AGENT_HOST: jaeger
-  #     JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-  #   volumes:
-  #     - './lamassu/device-manager_certs:/certs'
-  #   ports:
-  #     - ${DEVICES_PORT}:${DEVICES_PORT}
-  #   networks:
-  #     - lamassu-net
-  #   restart: on-failure
-  #   depends_on:
-  #     - fluentd
+      JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
+      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
+    volumes:
+      - './lamassu/device-manager_certs:/certs'
+    ports:
+      - ${DEVICES_PORT}:${DEVICES_PORT}
+    networks:
+      - lamassu-net
+    restart: on-failure
+    depends_on:
+      - fluentd
     # logging:
     #   driver: fluentd
     #   options:

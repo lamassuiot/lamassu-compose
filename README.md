@@ -61,8 +61,9 @@ sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
     ``` 
     2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
     3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
+    **Note: Use the absolute path for the VAULT_CA_FILE env var file path **
     ```
-    export VAULT_CA_FILE=lamassu/vault_certs/vault.crt
+    export VAULT_CA_FILE=/lamassu/vault_certs/vault.crt
     export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
     export VAULT_ADDR=https://lamassu.dev:8200
     ```

@@ -31,7 +31,7 @@ do
     cp lamassu/lamassu.crt lamassu/"$s"_certs/ca.crt
 done
 
-consul_dependant_services=(ca device-manager enroller ocsp prometheus)
+consul_dependant_services=(vault ca device-manager enroller ocsp prometheus)
 for s in "${consul_dependant_services[@]}"; 
 do
     mkdir -p lamassu/"$s"_certs

@@ -287,7 +287,7 @@ services:
       DEVICES_POSTGRESDB: '${DEVICES_POSTGRESDB}'
       DEVICES_POSTGRESUSER: '${DEVICES_POSTGRESUSER}'
       DEVICES_POSTGRESPASSWORD: '${DEVICES_POSTGRESPASSWORD}'
-      DEVICES_POSTGRESHOSTNAME: device-manager-db
+      DEVICES_POSTGRESHOSTNAME: '${DEVICES_POSTGRESHOST}'
       DEVICES_POSTGRESPORT: '${DEVICES_POSTGRESPORT}'
 
       DEVICES_KEYCLOAKPROTOCOL: '${DEVICES_KEYCLOAKPROTOCOL}'
@@ -305,7 +305,7 @@ services:
       DEVICES_CASERVERADDR: '${DEVICES_CASERVERADDR}'
 
       JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
       
       #EST SERVER CONFIG
@@ -327,6 +327,11 @@ services:
       - ${DEVICES_EST_SERVER_PORT}:${DEVICES_EST_SERVER_PORT}
     networks:
       - lamassu-net
+    links:
+      - "keycloak:keycloak.lamassu.dev"
+      - "ca:ca.lamassu.dev"
+      - "consul-server:consul.lamassu.dev"
+      - "jaeger:jaeger.lamassu.dev"
     restart: on-failure
     depends_on:
       - fluentd

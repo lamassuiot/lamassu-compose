@@ -42,6 +42,9 @@ export DOMAIN=lamassu.dev
 5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `lamassu.dev` with your domain (The same as the exported DOMAIN env variable).**  
 ```
 127.0.0.1   lamassu.dev
+127.0.0.1   vault.lamassu.dev
+127.0.0.1   consul-server.lamassu.dev
+127.0.0.1   keycloak.lamassu.dev
 ```
 
 6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:

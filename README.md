@@ -114,7 +114,7 @@ docker-compose up -d
     ```
     2. Then, register a new DMS named Lamassu-Defaul-DMS:   
     ```    
-    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST 'https://lamassu.dev:8085/v1/csrs/Lamassu-Defaul-DMS/form' --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""})
+    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST 'https://lamassu.dev:8085/v1/csrs/Lamassu-Defaul-DMS/form' --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
     
     echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' > lamassu-default-dms.key'
     export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)

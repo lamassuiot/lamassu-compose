@@ -83,9 +83,74 @@ sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
     CA_VAULTROLEID=<CA_VAULTROLEID>
     CA_VAULTSECRETID=<CA_VAULTSECRETID>
     ```
-
+    
 8. Configure Keycloak:
-    1. Run Keycloak: `docker-compose up -d keycloak`.
+    1. Run All the services: 
+    ```
+    docker-compose up -d keycloak
+    ```
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
-    3. Create a user with admin role to perform Enroller administrator tasks.
-    4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.
+    3. Create a user with admin role to perform Enroller administrator tasks. (The command below creates a user named **enroller** with **enroller** as its password):
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
+    ```
+    4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.(The command below creates a user named **operator** with **operator** as its password):
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles admin
+    ```
+    
+9. Reboot all services:
+```
+docker-compose down
+```
+After shutting down all services run the command:
+```
+docker-compose up -d
+```
+10. Configure a new DMS Instance
+    1. First, authenticate against Keycloak:
+    ```
+     export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+    ```
+    2. Then, register a new DMS named Lamassu-Defaul-DMS:   
+    ```    
+    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Defaul-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
+    
+    echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' > lamassu-default-dms.key
+    export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
+
+    ```
+    3. Enroll the new DMS
+    ```
+    curl -k --location --request PUT "https://$DOMAIN:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
+    ```
+    4. Get issued DMS Cert
+    ```
+    curl -k --location --request GET "https://$DOMAIN:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt 
+    ```
+    5. The DMS requires the following keys and certicates:
+    
+    ```
+    cp lamassu/lamassu.crt lamassu-client/device-manager.crt
+    cp lamassu/lamassu.crt lamassu-client/https.crt
+    cp lamassu/lamassu.key lamassu-client/https.key
+    ```
+    
+    ```
+    cp lamassu-default-dms.crt lamassu-client/enrolled-dms.crt
+    cp lamassu-default-dms.key lamassu-client/enrolled-dms.key
+    ```
+    
+    6. And finally, start the DMS "server":
+    ```
+    docker-compose up -d
+    ```
+    The server has the following endpoint:
+    `lamassu.dev:5000/dms-issue/<DEVICE_ID>/<CA_NAME>` This endpoint enrolls a registered device
+        
+    Once enrolled, the device certificate can be obtained using the following endpoint exposed by the `DEVICE Manager` service:
+    ```
+    curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
+    ```
+    
+    

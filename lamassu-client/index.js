@@ -12,7 +12,9 @@ const options = {
 const server = https.createServer(options, async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*")
 
-  if (req.url.startsWith("/dms-issue/") && req.method === "POST") {
+  if (req.url.startsWith("/dms-renew/") && req.method === "POST") {
+      const deviceId = req.url.split("/dms-issue/")[1]
+  } else if (req.url.startsWith("/dms-issue/") && req.method === "POST") {
     const cn_aps = req.url.split("/dms-issue/")[1]
     const cn=cn_aps.split("/")[0]
     const aps=cn_aps.split("/")[1]

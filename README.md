@@ -110,11 +110,11 @@ docker-compose up -d
 9. Configure a new DMS Instance
     1. First, authenticate against Keycloak:
     ```
-     export TOKEN=$(curl -k --location --request POST 'https://lamassu.dev:8443/auth/realms/lamassu/protocol/openid-connect/token' --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+     export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
     ```
     2. Then, register a new DMS named Lamassu-Defaul-DMS:   
     ```    
-    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST 'https://lamassu.dev:8085/v1/csrs/Lamassu-Defaul-DMS/form' --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
+    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Defaul-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
     
     echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' > lamassu-default-dms.key
     export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
@@ -122,9 +122,10 @@ docker-compose up -d
     ```
     3. Enroll the new DMS
     ```
-    curl -k --location --request PUT "https://lamassu.dev:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
+    curl -k --location --request PUT "https://$DOMAIN:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
     ```
     4. Get issued DMS Cert
     ```
-    curl -k --location --request GET "https://lamassu.dev:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN"     
+    curl -k --location --request GET "https://$DOMAIN:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt 
     ```
+    5. Co

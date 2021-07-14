@@ -150,7 +150,7 @@ docker-compose up -d
         
     Once enrolled, the device certificate can be obtained using the following endpoint exposed by the `DEVICE Manager` service:
     ```
-    curl -k --location --request GET "https://$DOMAIN:089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
+    curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
     ```
     
     

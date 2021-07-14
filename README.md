@@ -68,7 +68,12 @@ sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
     export VAULT_ADDR=https://lamassu.dev:8200
     ```
     4. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
-    5. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+    5. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
+    ```
+    cat intermediate-DMS.crt > ../lamassu/device-manager_certs/dms-ca.crt
+    cat CA_cert.crt >> ../lamassu/device-manager_certs/dms-ca.crt
+    ```
+    6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
     ```
     # Obtain CA Wrapper RoleID and SecretID
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id

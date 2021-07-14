@@ -42,6 +42,9 @@ export DOMAIN=lamassu.dev
 5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `lamassu.dev` with your domain (The same as the exported DOMAIN env variable).**  
 ```
 127.0.0.1   lamassu.dev
+127.0.0.1   vault.lamassu.dev
+127.0.0.1   consul-server.lamassu.dev
+127.0.0.1   keycloak.lamassu.dev
 ```
 
 6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
@@ -58,13 +61,19 @@ sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
     ``` 
     2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
     3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
+    **Note: Use the absolute path for the VAULT_CA_FILE env var file path **
     ```
-    export VAULT_CA_FILE=lamassu/vault_certs/vault.crt
+    export VAULT_CA_FILE=/lamassu/vault_certs/vault.crt
     export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
     export VAULT_ADDR=https://lamassu.dev:8200
     ```
     4. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
-    5. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+    5. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
+    ```
+    cat intermediate-DMS.crt > ../lamassu/device-manager_certs/dms-ca.crt
+    cat CA_cert.crt >> ../lamassu/device-manager_certs/dms-ca.crt
+    ```
+    6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
     ```
     # Obtain CA Wrapper RoleID and SecretID
     curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id

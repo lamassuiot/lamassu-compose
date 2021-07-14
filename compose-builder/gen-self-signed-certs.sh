@@ -72,3 +72,10 @@ do
     mkdir -p lamassu/"$s"_certs
     cp lamassu/lamassu.crt lamassu/"$s"_certs/vault.crt
 done
+
+device_manager_dependant_services=(ca)
+for s in "${device_manager_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/device-manager.crt
+done

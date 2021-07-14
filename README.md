@@ -107,7 +107,7 @@ After shutting down all services run the command:
 ```
 docker-compose up -d
 ```
-9. Configure a new DMS Instance
+10. Configure a new DMS Instance
     1. First, authenticate against Keycloak:
     ```
      export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
@@ -128,4 +128,29 @@ docker-compose up -d
     ```
     curl -k --location --request GET "https://$DOMAIN:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt 
     ```
-    5. Co
+    5. The DMS requires the following keys and certicates:
+    
+    ```
+    cp lamassu/lamassu.crt lamassu-client/device-manager.crt
+    cp lamassu/lamassu.crt lamassu-client/https.crt
+    cp lamassu/lamassu.key lamassu-client/https.key
+    ```
+    
+    ```
+    cp lamassu-default-dms.crt lamassu-client/enrolled-dms.crt
+    cp lamassu-default-dms.key lamassu-client/enrolled-dms.key
+    ```
+    
+    6. And finally, start the DMS "server":
+    ```
+    docker-compose up -d
+    ```
+    The server has the following endpoint:
+    `lamassu.dev:5000/dms-issue/<DEVICE_ID>/<CA_NAME>` This endpoint enrolls a registered device
+        
+    Once enrolled, the device certificate can be obtained using the following endpoint exposed by the `DEVICE Manager` service:
+    ```
+    curl -k --location --request GET "https://$DOMAIN:089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
+    ```
+    
+    

@@ -248,7 +248,6 @@ services:
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
       EST_LISTENADDR: '${CA_EST_SERVER_LISTEN_IP}:${CA_EST_SERVER_PORT}'
-      EST_CLIENTCA: '${CA_ENROLLERCA}'
       EST_CERTS: '${CA_CERTFILE}'
       EST_PRIVATEKEY: '${CA_KEYFILE}'
     volumes:
@@ -308,10 +307,24 @@ services:
       JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: jaeger
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
+      
+      #EST SERVER CONFIG
+      EST_LISTENADDR: '${DEVICES_EST_SERVER_LISTEN_IP}:${DEVICES_EST_SERVER_PORT}'
+      EST_CERTS: '${DEVICES_CERTFILE}'
+      EST_PRIVATEKEY: '${DEVICES_KEYFILE}'
+
+      #EST CLIENT CONFIG
+      EST_SERVER: '${DEVICES_EST_SERVER}'
+      # EST_APS: '${ENROLLER_EST_APS}'
+      EST_EXPLICITANCHORPATH: '/certs/ca.crt'
+      EST_CERTIFICATESPATH: '/certs/devices-est.crt'
+      EST_PRIVATEKEYPATH: '${DEVICES_KEYFILE}'
+
     volumes:
       - './lamassu/device-manager_certs:/certs'
     ports:
       - ${DEVICES_PORT}:${DEVICES_PORT}
+      - ${DEVICES_EST_SERVER_PORT}:${DEVICES_EST_SERVER_PORT}
     networks:
       - lamassu-net
     restart: on-failure

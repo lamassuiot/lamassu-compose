@@ -50,8 +50,8 @@ export DOMAIN=lamassu.dev
 6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
 
 ```
-sed -i 's/lamassu\.dev/mydomain.dev/g' .env
-sed -i 's/lamassu\.dev/mydomain.dev/g' docker-compose.yml
+sed -i 's/lamassu\.dev/$DOMAIN/g' .env
+sed -i 's/lamassu\.dev/$DOMAIN/g' docker-compose.yml
 ```
  
 7. Provision and configure Vault secret engine:

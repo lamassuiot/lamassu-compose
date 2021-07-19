@@ -36,22 +36,22 @@ export C=ES
 export ST=Guipuzcoa
 export L=Arrasate
 export O=Lamassu IoT
-export DOMAIN=lamassu.dev
+export DOMAIN=dev.lamassu.io
 ```
 
-5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `lamassu.dev` with your domain (The same as the exported DOMAIN env variable).**  
+5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `dev.lamassu.io` with your domain (The same as the exported DOMAIN env variable).**  
 ```
-127.0.0.1   lamassu.dev
-127.0.0.1   vault.lamassu.dev
-127.0.0.1   consul-server.lamassu.dev
-127.0.0.1   keycloak.lamassu.dev
+127.0.0.1   dev.lamassu.io
+127.0.0.1   vault.dev.lamassu.io
+127.0.0.1   consul-server.dev.lamassu.io
+127.0.0.1   keycloak.dev.lamassu.io
 ```
 
-6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. lamassu.dev. **Replace all domain ocurrences of lamassu.dev to your domian from both `docker-compose.yml` and `.env` files**:
+6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. dev.lamassu.io. **Replace all domain ocurrences of dev.lamassu.io to your domian from both `docker-compose.yml` and `.env` files**:
 
 ```
-sed -i 's/lamassu\.dev/$DOMAIN/g' .env
-sed -i 's/lamassu\.dev/$DOMAIN/g' docker-compose.yml
+sed -i 's/dev\.lamassu\.io/$DOMAIN/g' .env
+sed -i 's/dev\.lamassu\.io/$DOMAIN/g' docker-compose.yml
 ```
  
 7. Provision and configure Vault secret engine:
@@ -65,7 +65,7 @@ sed -i 's/lamassu\.dev/$DOMAIN/g' docker-compose.yml
     ```
     export VAULT_CA_FILE=/lamassu/vault_certs/vault.crt
     export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
-    export VAULT_ADDR=https://lamassu.dev:8200
+    export VAULT_ADDR=https://dev.lamassu.io:8200
     ```
     4. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
     5. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
@@ -158,7 +158,7 @@ docker-compose up -d
     docker-compose up -d
     ```
     The server has the following endpoint:
-    `lamassu.dev:5000/dms-issue/<DEVICE_ID>/<CA_NAME>` This endpoint enrolls a registered device
+    `dev.lamassu.io:5000/dms-issue/<DEVICE_ID>/<CA_NAME>` This endpoint enrolls a registered device
         
     Once enrolled, the device certificate can be obtained using the following endpoint exposed by the `DEVICE Manager` service:
     ```

@@ -17,15 +17,15 @@ services:
     build: 
       context: https://github.com/lamassuiot/lamassu-ui.git#master
     environment:
-      REACT_APP_AUTH_ENDPOINT: https://lamassu.dev:8443/auth
+      REACT_APP_AUTH_ENDPOINT: https://dev.lamassu.io:8443/auth
       REACT_APP_AUTH_REALM: "lamassu"
       REACT_APP_AUTH_CLIENT_ID: "frontend"
-      REACT_APP_CA_API: "https://lamassu.dev:8087"
-      REACT_APP_DEVICES_API: "https://lamassu.dev:8089"
-      REACT_APP_DMS_ENROLLER_API: "https://lamassu.dev:8085"
-      REACT_APP_CONSUL_API: "https://lamassu.dev:8501"
+      REACT_APP_CA_API: "https://dev.lamassu.io:8087"
+      REACT_APP_DEVICES_API: "https://dev.lamassu.io:8089"
+      REACT_APP_DMS_ENROLLER_API: "https://dev.lamassu.io:8085"
+      REACT_APP_CONSUL_API: "https://dev.lamassu.io:8501"
       REACT_APP_DEFAULT_DMS_ID: ${UI_DEFAULT_DMS_ID}
-      REACT_APP_DEFAULT_DMS_URL: "https://lamassu.dev:5000"
+      REACT_APP_DEFAULT_DMS_URL: "https://dev.lamassu.io:5000"
     volumes: 
       - './lamassu/ui_certs:/certs'
     ports:
@@ -80,7 +80,7 @@ services:
     networks:
       - lamassu-net
     links:
-      - "consul-server:consul.lamassu.dev"
+      - "consul-server:consul.dev.lamassu.io"
     # logging:
     #   driver: fluentd
     #   options:
@@ -190,10 +190,10 @@ services:
     networks:
       - lamassu-net
     links:
-      - "keycloak:keycloak.lamassu.dev"
-      - "consul-server:consul.lamassu.dev"
-      - "ca:ca.lamassu.dev"
-      - "jaeger:jaeger.lamassu.dev"
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "ca:ca.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     # logging:
     #   driver: fluentd
     #   options:
@@ -257,10 +257,10 @@ services:
     networks:
       - lamassu-net
     links:
-      - "vault:vault.lamassu.dev"
-      - "keycloak:keycloak.lamassu.dev"
-      - "consul-server:consul.lamassu.dev"
-      - "jaeger:jaeger.lamassu.dev"
+      - "vault:vault.dev.lamassu.io"
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     ports:
       - ${CA_PORT}:${CA_PORT}
       - ${CA_EST_SERVER_PORT}:${CA_EST_SERVER_PORT}
@@ -330,10 +330,10 @@ services:
     networks:
       - lamassu-net
     links:
-      - "keycloak:keycloak.lamassu.dev"
-      - "ca:ca.lamassu.dev"
-      - "consul-server:consul.lamassu.dev"
-      - "jaeger:jaeger.lamassu.dev"
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "ca:ca.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
     depends_on:
       - fluentd
@@ -392,8 +392,8 @@ services:
     networks:
       - lamassu-net
     links:
-      - "consul-server:consul.lamassu.dev"
-      - "jaeger:jaeger.lamassu.dev"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
     depends_on:
       - consul-server
@@ -415,7 +415,7 @@ services:
     networks:
       - lamassu-net
     links:
-      - "consul-server:consul.lamassu.dev"
+      - "consul-server:consul.dev.lamassu.io"
     depends_on:
       - fluentd
     # logging:
@@ -451,7 +451,7 @@ services:
     networks:
       - lamassu-net
     links:
-      - "elastic:elastic.lamassu.dev"
+      - "elastic:elastic.dev.lamassu.io"
     depends_on: 
       - elastic
       - fluentd

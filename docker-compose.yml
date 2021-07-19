@@ -25,6 +25,7 @@ services:
       REACT_APP_DMS_ENROLLER_API: "https://lamassu.dev:8085"
       REACT_APP_CONSUL_API: "https://lamassu.dev:8501"
       REACT_APP_DEFAULT_DMS_ID: ${UI_DEFAULT_DMS_ID}
+      REACT_APP_DEFAULT_DMS_URL: "https://lamassu.dev:5000"
     volumes: 
       - './lamassu/ui_certs:/certs'
     ports:

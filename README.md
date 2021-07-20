@@ -203,14 +203,6 @@ docker-compose up -d
     cp lamassu-default-dms.crt lamassu-default-dms/enrolled-dms.crt
     cp lamassu-default-dms.key lamassu-default-dms/enrolled-dms.key
     ```
-    7. Reboot once again all services:
-    ```
-    docker-compose down
-    ```
-    After shutting down all services run the command:
-    ```
-    docker-compose up -d
-    ```
     
     8. And finally, start the DMS "server":
     ```
@@ -225,4 +217,19 @@ docker-compose up -d
     curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
     ```
     
+    9.  Reboot all services:
+    ```
+    docker-compose down
+    ```
+    After shutting down all services run the command:
+    ```
+    docker-compose up -d
+    ```
+    Unseal vault 
+    ```
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
+
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
+    ```
     
+

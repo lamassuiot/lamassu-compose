@@ -346,7 +346,7 @@ services:
 
   device-manager-db:
     build:
-      context: https://github.com/lamassuiot/lamassu-device-manager.git#develop
+      context: https://github.com/lamassuiot/lamassu-device-manager.git#main
       dockerfile: Dockerfile.devicesdb
     environment:
       POSTGRES_DB: '${DEVICES_POSTGRESDB}'

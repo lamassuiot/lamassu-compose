@@ -93,9 +93,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
      }
     ```
     
-    3. First export the following variables:
-
-    **Note: Use the absolute path for the VAULT_CA_FILE env var file path**
+    3. Export the following variables:
     ```
     export VAULT_CA_FILE=$(pwd)/lamassu/vault_certs/vault.crt
     export VAULT_TOKEN=$(cat vault-credentials.json | jq .root_token -r)

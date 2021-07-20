@@ -3,6 +3,9 @@ const util = require("util");
 const fs = require('fs');
 const exec = util.promisify(require("child_process").exec);
 
+const DOMAIN = process.env.DOMAIN
+
+
 const options = {
   key: fs.readFileSync('/app/https.key'),
   cert: fs.readFileSync('/app/https.crt')
@@ -37,7 +40,7 @@ const server = https.createServer(options, async (req, res) => {
       const data = Buffer.concat(chunks).toString("utf-8");
 
       fs.writeFileSync('/app/devices-crypto-material/device-'+cn+'.csr', data)
-      const CMD_ENROLL = 'estclient enroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
+      const CMD_ENROLL = 'estclient enroll -server '+DOMAIN+':9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
       console.log(CMD_ENROLL);
       if (await execCmd(CMD_ENROLL) == 0) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -77,7 +80,7 @@ const server = https.createServer(options, async (req, res) => {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ message: "Executed correctly" }));
       }else{
-        const CMD_ENROLL = 'estclient enroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
+        const CMD_ENROLL = 'estclient enroll -server '+DOMAIN+':9998 -explicit /app/device-manager-anchore.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
         console.log(CMD_ENROLL);
         if (await execCmd(CMD_ENROLL) == 0) {
           res.writeHead(200, { "Content-Type": "application/json" });

@@ -4,6 +4,8 @@ services:
   dms-example:
     build:
         context: .
+    environment:
+      DOMAIN: dev.lamassu.io
     volumes:
         - ./index.js:/app/index.js
         - ./devices-crypto-material:/app/devices-crypto-material

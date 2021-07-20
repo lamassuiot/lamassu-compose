@@ -122,7 +122,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     cat intermediate-DMS.crt > ../lamassu/device-manager_certs/dms-ca.crt
     cat CA_cert.crt >> ../lamassu/device-manager_certs/dms-ca.crt
     ```
-
+    
     Change the context to the upper directory
     ```
     cd ..
@@ -207,6 +207,7 @@ docker-compose up -d
     8. And finally, start the DMS "server":
     ```
     cd lamassu-default-dms
+    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     docker-compose up -d
     ```
     The server has the following endpoint:

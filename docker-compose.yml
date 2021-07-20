@@ -429,7 +429,7 @@ services:
     image: jaegertracing/all-in-one:latest
     environment:
       SPAN_STORAGE_TYPE: '${SPAN_STORAGE_TYPE}'
-      ES_USERNAME: '${ELASTIC_USERNAME}'
+      ES_USERNAME: 'elastic'
       ES_PASSWORD: '${ELASTIC_PASSWORD}'
       ES_SERVER_URLS: '${ES_SERVER_URLS}'
       ES_TLS_ENABLED: 'true'

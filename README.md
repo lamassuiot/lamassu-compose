@@ -12,7 +12,7 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**:
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Elasticsearch provisions itslef with a superuser using 'elastic' as username**:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -26,7 +26,6 @@ ENROLLER_POSTGRESPASSWORD=<ENROLLER_POSTGRESPASSWORD> //Enroller database user p
 DEVICES_POSTGRESUSER=<DEVICES_POSTGRESUSER> //Device Manager database user.
 DEVICES_POSTGRESPASSWORD=<DEVICES_POSTGRESPASSWORD> //Device Manager database password.
 
-ELASTIC_USERNAME=<ELASTIC_USERNAME> //Elasticsearch username.
 ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
 ```
 

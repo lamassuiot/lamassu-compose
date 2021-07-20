@@ -30,13 +30,19 @@ ELASTIC_USERNAME=<ELASTIC_USERNAME> //Elasticsearch username.
 ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
 ```
 
-4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script and providing the next environment variables:
+4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script. First provide the next environment variables used by the script:
 ```
 export C=ES
 export ST=Guipuzcoa
 export L=Arrasate
 export O=Lamassu IoT
 export DOMAIN=dev.lamassu.io
+```
+
+After defining the env variables, generarte the self signed certificate:
+
+```
+./compose-builder/gen-self-signed-certs.sh
 ```
 
 5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `dev.lamassu.io` with your domain (The same as the exported DOMAIN env variable).**  
@@ -50,8 +56,8 @@ export DOMAIN=dev.lamassu.io
 6. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. dev.lamassu.io. **Replace all domain ocurrences of dev.lamassu.io to your domian from both `docker-compose.yml` and `.env` files**:
 
 ```
-sed -i 's/dev\.lamassu\.io/$DOMAIN/g' .env
-sed -i 's/dev\.lamassu\.io/$DOMAIN/g' docker-compose.yml
+sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' .env
+sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
  
 7. Provision and configure Vault secret engine:
@@ -59,37 +65,66 @@ sed -i 's/dev\.lamassu\.io/$DOMAIN/g' docker-compose.yml
     ```
     docker-compose up -d vault
     ``` 
-    2. Follow the Vault UI steps in `VAULT_ADDR` to create and get the unseal keys and root token.
-    3. Unseal Vault from the UI in `VAULT_ADDR` and automatically provision it with needed authentication methods, policies and secret engines, running the `ca-provision.sh` script and providing the next environment variables:
-    **Note: Use the absolute path for the VAULT_CA_FILE env var file path **
+    2. Initalize vault: This process generates vault's unseal keys as well as the root token:
     ```
-    export VAULT_CA_FILE=/lamassu/vault_certs/vault.crt
-    export VAULT_TOKEN=<VAULT_ROOT_TOKEN>
-    export VAULT_ADDR=https://dev.lamassu.io:8200
+    docker-compose exec vault vault operator init -key-shares=3 -key-threshold=2 -tls-skip-verify -format=json > vault-credentials.json
     ```
-    4. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
-    5. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
+
+    3. Unseal Vault using the keys obtained with the previous command:
+    ```
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
+
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
+    ```
+    
+    4. Vault must be provisioned with some resources (authentication methods, policies and secret engines). That can be achieved by running the `ca-provision.sh` script. First export the following variables:
+
+    **Note: Use the absolute path for the VAULT_CA_FILE env var file path**
+    ```
+    export VAULT_CA_FILE=$(pwd)/lamassu/vault_certs/vault.crt
+    export VAULT_TOKEN=$(cat vault-credentials.json | jq .root_token -r)
+    export VAULT_ADDR=https://$DOMAIN:8200
+    ```
+
+    After defining the env variables, provision vault:
+
+    ```
+    cd compose-builder
+    ./ca-provision.sh
+    ```
+
+    5. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
+    
+    6. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
+
     ```
     cat intermediate-DMS.crt > ../lamassu/device-manager_certs/dms-ca.crt
     cat CA_cert.crt >> ../lamassu/device-manager_certs/dms-ca.crt
     ```
-    6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+
+    Change the context to the upper directory
     ```
-    # Obtain CA Wrapper RoleID and SecretID
-    curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id
-    curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/secret-id 
+    cd ..
+    ```
+
+    7. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+    ```
+    export CA_VAULTROLEID=$(curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id | jq -r .data.role_id )
+
+    export CA_VAULTSECRETID=$(curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/secret-id | jq -r .data.secret_id)
 
     # Set RoleID and SecretID in .env file
-    CA_VAULTROLEID=<CA_VAULTROLEID>
-    CA_VAULTSECRETID=<CA_VAULTSECRETID>
+    sed -i 's/ROLE_ID_TO_BE_REPLACED/'$CA_VAULTROLEID'/g' .env
+    sed -i 's/SECRET_ID_TO_BE_REPLACED/'$CA_VAULTSECRETID'/g' .env
     ```
     
 8. Configure Keycloak:
-    1. Run All the services: 
+    1. Run Keycloak: 
     ```
     docker-compose up -d keycloak
     ```
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
+
     3. Create a user with admin role to perform Enroller administrator tasks. (The command below creates a user named **enroller** with **enroller** as its password):
     ```
     docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
@@ -98,15 +133,17 @@ sed -i 's/dev\.lamassu\.io/$DOMAIN/g' docker-compose.yml
     ```
     docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles admin
     ```
+
+    5. Reload keyclok server
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
+    ```
     
-9. Reboot all services:
-```
-docker-compose down
-```
-After shutting down all services run the command:
+9. Start the remaining services:
 ```
 docker-compose up -d
 ```
+
 10. Configure a new DMS Instance
     1. First, authenticate against Keycloak:
     ```
@@ -121,7 +158,7 @@ docker-compose up -d
     ```
     3. Lamassu UI only allows provisioning devices belonging to the default DMS. Set the DMS ID generated earlier
     ```
-    sed -i 's/REPLACE_WITH_DEFAULT_DMS_ID/$DMS_ID/g' .env
+    sed -i 's/REPLACE_WITH_DEFAULT_DMS_ID/'$DMS_ID'/g' .env
     ``` 
 
     4. Enroll the new DMS

@@ -470,7 +470,6 @@ services:
       node.name: 'elastic'
       discovery.type: 'single-node'
       ELASTIC_CERTS_DIR: '/usr/share/elasticsearch/config'
-      ELASTIC_USERNAME: '${ELASTIC_USERNAME}'
       ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
     volumes:
       - 'elastic_data:/usr/share/elasticsearch/data'

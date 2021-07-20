@@ -69,33 +69,54 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     docker-compose exec vault vault operator init -key-shares=3 -key-threshold=2 -tls-skip-verify -format=json > vault-credentials.json
     ```
-
-    3. Unseal Vault using the keys obtained with the previous command:
+    
+    Verify the `vault-credentials.json` file has the expected content. It should be similar to this:
     ```
-    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
-
-    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
+    {
+      "unseal_keys_b64": [
+        "a1ps/xdjFuWxbU8ji+JpBzUeGUNH1XiBnwdbkCLn0vQY",
+        "LUCvq/JvRlYY6gpDpZUlKC43wJKzaLsLU/Ru/3BVpj17",
+        "LiiO4EtfHayKwAXYHVIOlEKTiftOqpoVThW6WCOrbTTs"
+      ],
+      "unseal_keys_hex": [
+        "6b5a6cff176316e5b16d4f238be26907351e194347d578819f075b9022e7d2f418",
+        "2d40afabf26f465618ea0a43a59525282e37c092b368bb0b53f46eff7055a63d7b",
+        "2e288ee04b5f1dac8ac005d81d520e94429389fb4eaa9a154e15ba5823ab6d34ec"
+      ],
+      "unseal_shares": 3,
+      "unseal_threshold": 2,
+      "recovery_keys_b64": [],
+      "recovery_keys_hex": [],
+      "recovery_keys_shares": 5,
+      "recovery_keys_threshold": 3,
+      "root_token": "s.X8lNJLvR9KMeOQpujSu6gSDh"
+     }
     ```
     
-    4. Vault must be provisioned with some resources (authentication methods, policies and secret engines). That can be achieved by running the `ca-provision.sh` script. First export the following variables:
-
-    **Note: Use the absolute path for the VAULT_CA_FILE env var file path**
+    3. Export the following variables:
     ```
     export VAULT_CA_FILE=$(pwd)/lamassu/vault_certs/vault.crt
     export VAULT_TOKEN=$(cat vault-credentials.json | jq .root_token -r)
     export VAULT_ADDR=https://$DOMAIN:8200
     ```
 
-    After defining the env variables, provision vault:
+    4. Unseal Vault using the keys obtained with the previous command:
+    ```
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
+
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
+    ```
+    
+    5. Vault must be provisioned with some resources (authentication methods, policies and secret engines). That can be achieved by running the `ca-provision.sh` script. 
 
     ```
     cd compose-builder
     ./ca-provision.sh
     ```
 
-    5. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
+    6. Vault will be provisioned with 4 Root CAs, 3 Special CAS (Lamassu-Lamassu-DMS) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
     
-    6. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
+    7. The Device Manager has an embedded EST server. Such service protects its endpoints by only allowing REST calls presenting a peer TLS certificate issued by the (DMS) Enroller. The (DMS) Enroller CA cert must be mounted by the EST Server. To obtain the certificate run the following commands:
 
     ```
     cat intermediate-DMS.crt > ../lamassu/device-manager_certs/dms-ca.crt
@@ -107,7 +128,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     cd ..
     ```
 
-    7. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+    8. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
     ```
     export CA_VAULTROLEID=$(curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id | jq -r .data.role_id )
 
@@ -131,7 +152,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.(The command below creates a user named **operator** with **operator** as its password):
     ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles admin
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator
     ```
 
     5. Reload keyclok server

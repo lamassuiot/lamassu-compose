@@ -12,7 +12,9 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Elasticsearch provisions itslef with a superuser using 'elastic' as username**:
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**. 
+
+Note: Elasticsearch provisions itslef with a built-in superuser using 'elastic' as username:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -159,6 +161,14 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
     ```
     
+    If Keycloak display the following output, keycloak has successfully reloaded. Otherwise, run the command again until you see the expected output:
+    ```
+    {
+        "outcome" => "success",
+        "result" => undefined
+    }
+    ```
+    
 9. Start the remaining services:
 ```
 docker-compose up -d
@@ -169,11 +179,11 @@ docker-compose up -d
     ```
      export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
     ```
-    2. Then, register a new DMS named Lamassu-Defaul-DMS:   
+    2. Then, register a new DMS named Lamassu-Default-DMS:   
     ```    
-    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Defaul-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Defaul-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
+    export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Default-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
     
-    echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' > lamassu-default-dms.key
+    echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' > lamassu-default-dms.key
 
     export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
     ```
@@ -217,12 +227,10 @@ docker-compose up -d
     curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
     ```
     
-    9.  Reboot all services:
+    9.  Reboot all services but the default DMS:
     ```
+    cd ..
     docker-compose down
-    ```
-    After shutting down all services run the command:
-    ```
     docker-compose up -d
     ```
     Unseal vault 

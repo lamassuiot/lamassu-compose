@@ -161,6 +161,14 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
     ```
     
+    If Keycloak display the following output, keycloak has successfully reloaded. Otherwise, run the command again until you see the expected output:
+    ```
+    {
+        "outcome" => "success",
+        "result" => undefined
+    }
+    ```
+    
 9. Start the remaining services:
 ```
 docker-compose up -d
@@ -219,8 +227,9 @@ docker-compose up -d
     curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
     ```
     
-    9.  Reboot all services:
+    9.  Reboot all services but the default DMS:
     ```
+    cd ..
     docker-compose down
     ```
     After shutting down all services run the command:

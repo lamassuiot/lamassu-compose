@@ -6,6 +6,7 @@ services:
         context: .
     environment:
       DOMAIN: dev.lamassu.io
+      PORT: 5000
     volumes:
         - ./index.js:/app/index.js
         - ./devices-crypto-material:/app/devices-crypto-material
@@ -15,8 +16,10 @@ services:
         - ./https.crt:/app/https.crt
         - ./https.key:/app/https.key
     network_mode: "host"
+    # The ports directive is ignored as the network_mode is set to 'host'
     ports:
       - 5000:5000
+    restart: on-failure
     entrypoint: "node /app/index.js"
 
         

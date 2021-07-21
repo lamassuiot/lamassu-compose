@@ -231,9 +231,6 @@ docker-compose up -d
     ```
     cd ..
     docker-compose down
-    ```
-    After shutting down all services run the command:
-    ```
     docker-compose up -d
     ```
     Unseal vault 

@@ -179,7 +179,8 @@ docker-compose up -d
     ```
      export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
     ```
-    2. Then, register a new DMS named Lamassu-Default-DMS:   
+    2. Then, register a new DMS named Lamassu-Default-DMS:
+    **Note: while registering new DMS instances with non admin users, it is necessary to register the DMS using the user's username as the common name, otherwise, the user won't see its DMSs**   
     ```    
     export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw '{"common_name": "Lamassu-Default-DMS","country": "","key_bits": 3072,"key_type": "rsa","locality": "","organization": "","organization_unit": "","state": ""}')
     

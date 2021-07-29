@@ -169,10 +169,10 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     }
     ```
     
-    6. Keycloak also needs to be configured with a client used by the device manager to authenticate himself using a service account. Note that the following commands assume the  credentials for the ADMIN user have been not changed (admin/admin). Otherwise just change the first command accordingly 
+    6. Keycloak also needs to be configured with a client used by the device manager to authenticate himself using a service account. **Note that the following commands assume the  credentials for the ADMIN user have been not changed (admin/admin). Otherwise just change the first command accordingly** 
     ```
     docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-    export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager4 -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
+    export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
     export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/f11db9bf-52f1-40da-ac8b-546135b8f2f9/client-secret -o | jq -r .value)    
     ```
     

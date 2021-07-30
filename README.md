@@ -173,15 +173,29 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
     export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
-    export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/f11db9bf-52f1-40da-ac8b-546135b8f2f9/client-secret -o | jq -r .value)    
+    ```
+    7. Check the contents of the KC_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
+    
+    ```
+    echo $KC_CLIENT_UUID
+    
+    export KC_CLIENT_UUID=`echo $KC_CLIENT_UUID | sed 's/\\r//g'`
+    
+    export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_CLIENT_UUID/client-secret -o | jq -r .value)    
+    ```
+    8. Replace the device manager client secret from the `.env` file:
+    ```
+    sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_CLIENT_SECRET'/g' .env    
     ```
     
-9. Start the remaining services:
+9. The Device Manage has a configurable variable that deteremines when a device can renew (also known as reenroll) its certificate. By default the reenrollment process can only be done 30 days prior to the cert's expiratio time. This value can be changed by modifying the `DEVICES_MINIMUMREENROLLDAYS` variable located in the `.env` file
+    
+10. Start the remaining services:
 ```
 docker-compose up -d
 ```
 
-10. Configure a new DMS Instance
+11. Configure a new DMS Instance
     1. First, authenticate against Keycloak:
     ```
      export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)

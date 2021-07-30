@@ -208,21 +208,16 @@ docker-compose up -d
     echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' > lamassu-default-dms.key
 
     export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
-    ```
-    3. Lamassu UI only allows provisioning devices belonging to the default DMS. Set the DMS ID generated earlier
-    ```
-    sed -i 's/REPLACE_WITH_DEFAULT_DMS_ID/'$DMS_ID'/g' .env
-    ``` 
 
-    4. Enroll the new DMS
+    3. Enroll the new DMS
     ```
     curl -k --location --request PUT "https://$DOMAIN:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
     ```
-    5. Get issued DMS Cert
+    4. Get issued DMS Cert
     ```
     curl -k --location --request GET "https://$DOMAIN:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt 
     ```
-    6. The DMS requires the following keys and certicates:
+    5. The DMS requires the following keys and certicates:
     
     ```
     cp lamassu/lamassu.crt lamassu-default-dms/device-manager.crt
@@ -235,7 +230,7 @@ docker-compose up -d
     cp lamassu-default-dms.key lamassu-default-dms/enrolled-dms.key
     ```
     
-    8. And finally, start the DMS "server":
+    6. And finally, start the DMS "server":
     ```
     cd lamassu-default-dms
     sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
@@ -249,7 +244,7 @@ docker-compose up -d
     curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
     ```
     
-    9.  Reboot all services but the default DMS:
+    7.  Reboot all services but the default DMS:
     ```
     cd ..
     docker-compose down

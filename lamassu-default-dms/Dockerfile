@@ -5,4 +5,4 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -y nodejs
 
 # Install GlobalSign - EST Client CLI 
-RUN go install github.com/globalsign/est/cmd/estclient@latest
+RUN go install github.com/lamassuiot/est/cmd/estclient@latest

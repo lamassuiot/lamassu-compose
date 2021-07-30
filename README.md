@@ -208,7 +208,7 @@ docker-compose up -d
     echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' > lamassu-default-dms.key
 
     export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
-
+    ```
     3. Enroll the new DMS
     ```
     curl -k --location --request PUT "https://$DOMAIN:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'

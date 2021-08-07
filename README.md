@@ -69,9 +69,10 @@ openssl pkcs8 -in lamassu/elastic_certs/elastic.key -topk8 -out lamassu/elastic_
 ```
 cd /usr/share/elasticsearch/plugins/opendistro_security/tools/
 chmod +x securityadmin.sh
-chmod +x hash.sh -p admin
+chmod +x hash.sh
 
 # Modificar fichero internal_users.yml añadiendo la contraseña hasheada del usuario admin
+./hash -p admin
 
 # Cargar configuracion de seguridad
 ./securityadmin.sh -cd ../securityconfig/ -icl -nhnv -cacert ../../../config/elastic.crt -cert ../../../config/elastic.crt -key ../../../config/elastic-pkcs8.key

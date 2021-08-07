@@ -12,9 +12,8 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**. 
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Open Distro for Elasticsearch (from now on refered as elasric), uses 3 different users admin/admin fluentd/admin jaeger/admin. The first set of credentilas correspond to the elastic's admin user, while the remainig two are used by fluentd and jager respectivly. The main reason for having 3 different user credentials is to grant different permissions for each service.**
 
-Note: Elasticsearch provisions itslef with a built-in superuser using 'elastic' as username:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -28,7 +27,13 @@ ENROLLER_POSTGRESPASSWORD=<ENROLLER_POSTGRESPASSWORD> //Enroller database user p
 DEVICES_POSTGRESUSER=<DEVICES_POSTGRESUSER> //Device Manager database user.
 DEVICES_POSTGRESPASSWORD=<DEVICES_POSTGRESPASSWORD> //Device Manager database password.
 
-ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
+ELASTIC_ADMIN_USERNAME=<ELASTIC_ADMIN_USERNAME> //Elasticseach admin username. This user manages and controlls the elastic server.
+ELASTIC_ADMIN_PASSWORD=<ELASTIC_ADMIN_PASSWORD> //Elasticseach admin password.
+ELASTIC_FLUENTD_USERNAME=<ELASTIC_FLUENTD_USERNAME> //Elasticseach fluentd username.
+ELASTIC_FLUENTD_PASSWORD=<ELASTIC_FLUENTD_PASSWORD> //Elasticseach fluentd password.
+ELASTIC_JAEGER_USERNAME=<ELASTIC_JAEGER_USERNAME> //Elasticseach fluentd username.
+ELASTIC_JAEGER_PASSWORD=<ELASTIC_JAEGER_PASSWORD> //Elasticseach fluentd password.
+
 ```
 
 4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script. First provide the next environment variables used by the script:
@@ -62,21 +67,82 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
 
 7. Configure Open Distro for Elasticsearch
+
+Elastic accepts keys in the pkcs8 format. The following command will convert the pem encoded key to the correspondig pkcs8 encoding format.
 ```
 openssl pkcs8 -in lamassu/elastic_certs/elastic.key -topk8 -out lamassu/elastic_certs/elastic-pkcs8.key -nocrypt
 ```
 
-```
-cd /usr/share/elasticsearch/plugins/opendistro_security/tools/
-chmod +x securityadmin.sh
-chmod +x hash.sh
+As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
 
-# Modificar fichero internal_users.yml añadiendo la contraseña hasheada del usuario admin
-./hash -p admin
-
-# Cargar configuracion de seguridad
-./securityadmin.sh -cd ../securityconfig/ -icl -nhnv -cacert ../../../config/elastic.crt -cert ../../../config/elastic.crt -key ../../../config/elastic-pkcs8.key
 ```
+ELASTIC_ADMIN_USERNAME=$(awk -F'=' '/^ELASTIC_ADMIN_USERNAME/ { print $2}' .env)
+ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env))
+
+ELASTIC_FLUENTD_USERNAME=$(awk -F'=' '/^ELASTIC_FLUENTD_USERNAME/ { print $2}' .env)
+ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env))
+
+ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
+ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env))
+
+echo $ELASTIC_ADMIN_USERNAME
+echo $ELASTIC_ADMIN_PASSWORD_HASH
+echo $ELASTIC_FLUENTD_USERNAME
+echo $ELASTIC_FLUENTD_PASSWORD_HASH
+echo $ELASTIC_JAEGER_USERNAME
+echo $ELASTIC_JAEGER_PASSWORD_HASH
+```
+Verify the above commands were successfully. It should be similar to this:
+```
+admin
+$2y$12$WYfRkIctUpVY7YDdZfHU.elQ/tRBKWQNqPqKsQEtk/zh9g3DmVSP2
+fluentd
+$2y$12$Joux9O6vGU659lckKJqMeOSM6HLWJ6Ib4G02SYs7Yy3EQZV0fm.Jq
+jaeger
+$2y$12$DgUW3qo/Wgck5iu0gSeGUuS9iYlBcrSdk.1aBiyyhybObJ10ARgfW
+```
+Replace the templated `internal_users.yml` file:
+```
+sed -i 's/ELASTIC_ADMIN_USERNAME_TO_REPLACE/'$ELASTIC_ADMIN_USERNAME'/g' elastic/elastic-internal-users.yml
+sed -i 's/ELASTIC_ADMIN_PASSWORD_TO_REPLACE/'$ELASTIC_ADMIN_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+sed -i 's/ELASTIC_FLUENTD_USERNAME_TO_REPLACE/'$ELASTIC_FLUENTD_USERNAME'/g' elastic/elastic-internal-users.yml
+sed -i 's/ELASTIC_FLUENTD_PASSWORD_TO_REPLACE/'$ELASTIC_FLUENTD_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+sed -i 's/ELASTIC_JAEGER_USERNAME_TO_REPLACE/'$ELASTIC_JAEGER_USERNAME'/g' elastic/elastic-internal-users.yml
+sed -i 's/ELASTIC_JAEGER_PASSWORD_TO_REPLACE/'$ELASTIC_JAEGER_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+```
+Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
+
+```
+sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' elastic/elastic-security-config.yml
+```
+In order to manage and initialize elastic's security module. This script requires that the admin's cert distinguished name matches the one specified in the `elasticsearch.yml` file 
+
+```
+ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt)
+sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
+```
+Initializa/Update elastic's security plugin:
+```
+docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
+```
+The remaining configuration steps will determine the permission that each authenticated keyclaok user will have whitin elastic. The following command will assign full access ONLY to keycloak users having the KEYCLOAK `admin` role. 
+```
+ELASTIC_ADMIN_PASSWORD=$(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env)
+echo $ELASTIC_ADMIN_USERNAME
+echo $ELASTIC_ADMIN_PASSWORD
+BASIC_AUTH=$(echo "$ELASTIC_ADMIN_USERNAME:$ELASTIC_ADMIN_PASSWORD" | base64 )
+echo $BASIC_AUTH
+
+curl --location --request PUT "https://$DOMAIN:9200/_opendistro/_security/api/rolesmapping/all_access" \
+--header "Authorization: Basic $BASIC_AUTH" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "backend_roles" : [ "admin" ],
+  "hosts" : [ ],
+  "users" : [ ]
+}'
+```
+FALTA EL ROLE MAPPING DEL CLIENTE FRONT DE KEYCLAOK (y fixear el comando de arriba, que no se pasa bien la variable BASIC_AUTH)
 
 7. Provision and configure Vault secret engine:
     1. Run Vault: 

@@ -10,14 +10,11 @@ services:
     volumes:
         - ./index.js:/app/index.js
         - ./devices-crypto-material:/app/devices-crypto-material
-        - ./device-manager.crt:/app/device-manager-anchore.crt
+        - ./device-manager.crt:/app/device-manager-anchor.crt
         - ./enrolled-dms.crt:/app/enrolled-dms.crt
         - ./enrolled-dms.key:/app/enrolled-dms.key
         - ./https.crt:/app/https.crt
         - ./https.key:/app/https.key
     network_mode: "host"
-    # The ports directive is ignored as the network_mode is set to 'host'
-    ports:
-      - 5000:5000
     restart: on-failure
     entrypoint: "node /app/index.js"

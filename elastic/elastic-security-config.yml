@@ -14,7 +14,7 @@ config:
           challenge: false
           config:
             subject_key: preferred_username
-            roles_key: roles
+            roles_key: realm_access.roles
             openid_connect_url: "https://dev.lamassu.io:8443/auth/realms/lamassu/.well-known/openid-configuration"
             openid_connect_idp.enable_ssl: true
             openid_connect_idp.verify_hostnames: true

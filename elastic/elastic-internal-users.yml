@@ -1,0 +1,62 @@
+# This is the internal user database
+# The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+# Define your internal users here
+
+ELASTIC_ADMIN_USERNAME_TO_REPLACE:
+  hash: "ELASTIC_ADMIN_PASSWORD_TO_REPLACE"
+  reserved: true
+  opendistro_security_roles:
+  - all_access
+  - security_rest_api_access
+  backend_roles:
+  - "admin"
+  description: ""
+
+ELASTIC_FLUENTD_USERNAME_TO_REPLACE:
+  hash: "ELASTIC_FLUENTD_PASSWORD_TO_REPLACE"
+  reserved: false
+  opendistro_security_roles:
+  - "logstash"
+  description: ""
+
+ELASTIC_JAEGER_USERNAME_TO_REPLACE:
+  hash: "ELASTIC_JAEGER_PASSWORD_TO_REPLACE"
+  reserved: false
+  opendistro_security_roles:
+  - "logstash"
+  description: ""
+
+# kibanaserver:
+#   hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
+#   reserved: true
+#   description: "Demo kibanaserver user"
+
+# kibanaro:
+#   hash: "$2a$12$JJSXNfTowz7Uu5ttXfeYpeYE0arACvcwlPBStB1F.MI7f0U9Z4DGC"
+#   reserved: false
+#   backend_roles:
+#   - "kibanauser"
+#   - "readall"
+#   attributes:
+#     attribute1: "value1"
+#     attribute2: "value2"
+#     attribute3: "value3"
+#   description: "Demo kibanaro user"
+
+# readall:
+#   hash: "$2a$12$ae4ycwzwvLtZxwZ82RmiEunBbIPiAmGZduBAjKN0TXdwQFtCwARz2"
+#   reserved: false
+#   backend_roles:
+#   - "readall"
+#   description: "Demo readall user"
+
+# snapshotrestore:
+#   hash: "$2y$12$DpwmetHKwgYnorbgdvORCenv4NAK8cPUg8AI6pxLCuWf/ALc0.v7W"
+#   reserved: false
+#   backend_roles:
+#   - "snapshotrestore"

@@ -478,10 +478,10 @@ services:
       - './lamassu/elastic_certs/elastic.crt:/usr/share/elasticsearch/config/elastic.crt'
       - './lamassu/elastic_certs/elastic-pkcs8.key:/usr/share/elasticsearch/config/elastic-pkcs8.key'
       - './lamassu/elastic_certs/keycloak.crt:/usr/share/elasticsearch/config/keycloak.crt'
-      - './elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml'
-      - './elastic-logs.properties:/usr/share/elasticsearch/config/log4j2.properties'
-      - './elastic-security-config.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/config.yml'
-      - './elastic-internal-users.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml'
+      - './elastic/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml'
+      - './elastic/elastic-logs.properties:/usr/share/elasticsearch/config/log4j2.properties'
+      - './elastic/elastic-security-config.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/config.yml'
+      - './elastic/elastic-internal-users.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml'
     ports:
       - 9200:9200
       - 9300:9300

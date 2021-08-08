@@ -8,5 +8,5 @@ opendistro_security.ssl.http.pemcert_filepath: elastic.crt
 opendistro_security.ssl.http.pemtrustedcas_filepath: elastic.crt
 
 opendistro_security.authcz.admin_dn:
-  - "CN=dev.lamassu.io,O=Lamassu,L=Arrasate,ST=Guipuzcoa,C=ES"
+  - "ADMIN_DN_TO_REPLACE"
 opendistro_security.restapi.roles_enabled: ["all_access", "security_rest_api_access"]

@@ -189,9 +189,9 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     9. Finally, try obtaning the list of elasticsearch indices using a keycloak user:
     ```
-    TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+    TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
 
-    curl --location --request GET "https://dev.lamassu.io:9200/_cat/indices?format=json' --header 'Authorization: Bearer $TOKEN"
+    curl --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
     ```
     If everything worked as intended, the request should return an output similar to the one below:
     ```

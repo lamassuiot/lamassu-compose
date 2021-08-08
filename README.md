@@ -125,13 +125,13 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 
     ```
     ELASTIC_ADMIN_USERNAME=$(awk -F'=' '/^ELASTIC_ADMIN_USERNAME/ { print $2}' .env)
-    ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env))
+    ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
     ELASTIC_FLUENTD_USERNAME=$(awk -F'=' '/^ELASTIC_FLUENTD_USERNAME/ { print $2}' .env)
-    ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env))
+    ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
     ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
-    ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env))
+    ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
     echo $ELASTIC_ADMIN_USERNAME
     echo $ELASTIC_ADMIN_PASSWORD_HASH

@@ -177,7 +177,6 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     ELASTIC_ADMIN_PASSWORD=$(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env)
     BASIC_AUTH=$(printf "%s" "$ELASTIC_ADMIN_USERNAME:$ELASTIC_ADMIN_PASSWORD" | base64 )
-    echo $BASIC_AUTH
 
     curl --location --request PUT "https://$DOMAIN:9200/_opendistro/_security/api/rolesmapping/all_access" \
     --header "Authorization: Basic $BASIC_AUTH" \

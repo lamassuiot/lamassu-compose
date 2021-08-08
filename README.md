@@ -12,9 +12,8 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**. 
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Open Distro for Elasticsearch (from now on refered as elasric), uses 3 different users admin/admin fluentd/admin jaeger/admin. The first set of credentilas correspond to the elastic's admin user, while the remainig two are used by fluentd and jager respectivly. The main reason for having 3 different user credentials is to grant different permissions for each service.**
 
-Note: Elasticsearch provisions itslef with a built-in superuser using 'elastic' as username:
 
 ```
 KEYCLOAK_DB_USER=<KEYCLOAK_DB_USER> //Keycloak database user.
@@ -28,7 +27,13 @@ ENROLLER_POSTGRESPASSWORD=<ENROLLER_POSTGRESPASSWORD> //Enroller database user p
 DEVICES_POSTGRESUSER=<DEVICES_POSTGRESUSER> //Device Manager database user.
 DEVICES_POSTGRESPASSWORD=<DEVICES_POSTGRESPASSWORD> //Device Manager database password.
 
-ELASTIC_PASSWORD=<ELASTIC_PASSWORD> //Elasticseach user password.
+ELASTIC_ADMIN_USERNAME=<ELASTIC_ADMIN_USERNAME> //Elasticseach admin username. This user manages and controlls the elastic server.
+ELASTIC_ADMIN_PASSWORD=<ELASTIC_ADMIN_PASSWORD> //Elasticseach admin password.
+ELASTIC_FLUENTD_USERNAME=<ELASTIC_FLUENTD_USERNAME> //Elasticseach fluentd username.
+ELASTIC_FLUENTD_PASSWORD=<ELASTIC_FLUENTD_PASSWORD> //Elasticseach fluentd password.
+ELASTIC_JAEGER_USERNAME=<ELASTIC_JAEGER_USERNAME> //Elasticseach fluentd username.
+ELASTIC_JAEGER_PASSWORD=<ELASTIC_JAEGER_PASSWORD> //Elasticseach fluentd password.
+
 ```
 
 4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script. First provide the next environment variables used by the script:
@@ -60,8 +65,154 @@ After defining the env variables, generarte the self signed certificate:
 sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' .env
 sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
- 
-7. Provision and configure Vault secret engine:
+    
+7. Configure Keycloak:
+    1. Run Elastic (This also will trigger the launching of Keyclaok and its DB): 
+    ```
+    docker-compose up -d elastic
+    ```
+    2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
+
+    3. Create a user with admin role to perform Enroller administrator tasks. (The command below creates a user named **enroller** with **enroller** as its password):
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
+    ```
+    4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.(The command below creates a user named **operator** with **operator** as its password):
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator
+    ```
+
+    5. Reload keyclok server
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
+    ```
+    
+    If Keycloak display the following output, keycloak has successfully reloaded. Otherwise, run the command again until you see the expected output:
+    ```
+    {
+        "outcome" => "success",
+        "result" => undefined
+    }
+    ```
+    
+    6. Keycloak also needs to be configured with a client used by the device manager to authenticate himself using a service account. **Note that the following commands assume the  credentials for the ADMIN user have been not changed (admin/admin). Otherwise just change the first command accordingly** 
+    ```
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+    export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
+    ```
+    7. Check the contents of the KC_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
+    
+    ```
+    echo $KC_CLIENT_UUID
+    
+    export KC_CLIENT_UUID=`echo $KC_CLIENT_UUID | sed 's/\\r//g'`
+    
+    export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_CLIENT_UUID/client-secret -o | jq -r .value)    
+    ```
+    8. Replace the device manager client secret from the `.env` file:
+    ```
+    sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_CLIENT_SECRET'/g' .env    
+    ```
+    
+8. Configure Open Distro for Elasticsearch
+
+    1. Elastic accepts keys in the pkcs8 format. The following command will convert the pem encoded key to the correspondig pkcs8 encoding format.
+    ```
+    openssl pkcs8 -in lamassu/elastic_certs/elastic.key -topk8 -out lamassu/elastic_certs/elastic-pkcs8.key -nocrypt
+    ```
+
+    2. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
+
+    ```
+    ELASTIC_ADMIN_USERNAME=$(awk -F'=' '/^ELASTIC_ADMIN_USERNAME/ { print $2}' .env)
+    ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env))
+
+    ELASTIC_FLUENTD_USERNAME=$(awk -F'=' '/^ELASTIC_FLUENTD_USERNAME/ { print $2}' .env)
+    ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env))
+
+    ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
+    ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env))
+
+    echo $ELASTIC_ADMIN_USERNAME
+    echo $ELASTIC_ADMIN_PASSWORD_HASH
+    echo $ELASTIC_FLUENTD_USERNAME
+    echo $ELASTIC_FLUENTD_PASSWORD_HASH
+    echo $ELASTIC_JAEGER_USERNAME
+    echo $ELASTIC_JAEGER_PASSWORD_HASH
+    ```
+    3. Verify the above commands were successfully. It should be similar to this:
+    ```
+    admin
+    $2y$12$WYfRkIctUpVY7YDdZfHU.elQ/tRBKWQNqPqKsQEtk/zh9g3DmVSP2
+    fluentd
+    $2y$12$Joux9O6vGU659lckKJqMeOSM6HLWJ6Ib4G02SYs7Yy3EQZV0fm.Jq
+    jaeger
+    $2y$12$DgUW3qo/Wgck5iu0gSeGUuS9iYlBcrSdk.1aBiyyhybObJ10ARgfW
+    ```
+    4. Replace the templated `internal_users.yml` file:
+    ```
+    sed -i 's/ELASTIC_ADMIN_USERNAME_TO_REPLACE/'$ELASTIC_ADMIN_USERNAME'/g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_ADMIN_PASSWORD_TO_REPLACE/'$ELASTIC_ADMIN_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_FLUENTD_USERNAME_TO_REPLACE/'$ELASTIC_FLUENTD_USERNAME'/g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_FLUENTD_PASSWORD_TO_REPLACE/'$ELASTIC_FLUENTD_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_JAEGER_USERNAME_TO_REPLACE/'$ELASTIC_JAEGER_USERNAME'/g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_JAEGER_PASSWORD_TO_REPLACE/'$ELASTIC_JAEGER_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    ```
+    5. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
+
+    ```
+    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' elastic/elastic-security-config.yml
+    ```
+    6. In order to manage and initialize elastic's security module. This script requires that the admin's cert distinguished name matches the one specified in the `elasticsearch.yml` file 
+
+    ```
+    ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt)
+    sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
+    ```
+    7. Initializa/Update elastic's security plugin:
+    ```
+    docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
+    ```
+    8. The remaining configuration steps will determine the permission that each authenticated keyclaok user will have whitin elastic. The following command will assign full access ONLY to keycloak users having the KEYCLOAK `admin` role. 
+    ```
+    ELASTIC_ADMIN_PASSWORD=$(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env)
+    BASIC_AUTH=$(printf "%s" "$ELASTIC_ADMIN_USERNAME:$ELASTIC_ADMIN_PASSWORD" | base64 )
+    echo $BASIC_AUTH
+
+    curl --location --request PUT "https://$DOMAIN:9200/_opendistro/_security/api/rolesmapping/all_access" \
+    --header "Authorization: Basic $BASIC_AUTH" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "backend_roles" : [ "admin" ],
+      "hosts" : [ ],
+      "users" : [ ]
+    }'
+    ```
+    9. Finally, try obtaning the list of elasticsearch indices using a keycloak user:
+    ```
+    TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+
+    curl --location --request GET "https://dev.lamassu.io:9200/_cat/indices?format=json' --header 'Authorization: Bearer $TOKEN"
+    ```
+    If everything worked as intended, the request should return an output similar to the one below:
+    ```
+    [
+        {
+            "health": "green",
+            "status": "open",
+            "index": ".opendistro_security",
+            "uuid": "Xu3BxJwASXS1rGHnhc_d1g",
+            "pri": "1",
+            "rep": "0",
+            "docs.count": "9",
+            "docs.deleted": "9",
+            "store.size": "94.9kb",
+            "pri.store.size": "94.9kb"
+        }
+    ]
+    ```
+
+9. Provision and configure Vault secret engine:
     1. Run Vault: 
     ```
     docker-compose up -d vault
@@ -140,54 +291,6 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/SECRET_ID_TO_BE_REPLACED/'$CA_VAULTSECRETID'/g' .env
     ```
     
-8. Configure Keycloak:
-    1. Run Keycloak: 
-    ```
-    docker-compose up -d keycloak
-    ```
-    2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
-
-    3. Create a user with admin role to perform Enroller administrator tasks. (The command below creates a user named **enroller** with **enroller** as its password):
-    ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
-    ```
-    4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.(The command below creates a user named **operator** with **operator** as its password):
-    ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator
-    ```
-
-    5. Reload keyclok server
-    ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
-    ```
-    
-    If Keycloak display the following output, keycloak has successfully reloaded. Otherwise, run the command again until you see the expected output:
-    ```
-    {
-        "outcome" => "success",
-        "result" => undefined
-    }
-    ```
-    
-    6. Keycloak also needs to be configured with a client used by the device manager to authenticate himself using a service account. **Note that the following commands assume the  credentials for the ADMIN user have been not changed (admin/admin). Otherwise just change the first command accordingly** 
-    ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-    export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
-    ```
-    7. Check the contents of the KC_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
-    
-    ```
-    echo $KC_CLIENT_UUID
-    
-    export KC_CLIENT_UUID=`echo $KC_CLIENT_UUID | sed 's/\\r//g'`
-    
-    export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_CLIENT_UUID/client-secret -o | jq -r .value)    
-    ```
-    8. Replace the device manager client secret from the `.env` file:
-    ```
-    sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_CLIENT_SECRET'/g' .env    
-    ```
-    
 9. The Device Manage has a configurable variable that deteremines when a device can renew (also known as reenroll) its certificate. By default the reenrollment process can only be done 30 days prior to the cert's expiratio time. This value can be changed by modifying the `DEVICES_MINIMUMREENROLLDAYS` variable located in the `.env` file
     
 10. Start the remaining services:
@@ -256,5 +359,3 @@ docker-compose up -d
 
     curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
     ```
-    
-

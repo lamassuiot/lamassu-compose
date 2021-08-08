@@ -67,9 +67,9 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
     
 7. Configure Keycloak:
-    1. Run Keycloak: 
+    1. Run Elastic (This also will trigger the launching of Keyclaok and its DB): 
     ```
-    docker-compose up -d keycloak
+    docker-compose up -d elastic
     ```
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
 

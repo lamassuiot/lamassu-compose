@@ -152,11 +152,11 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     4. Replace the templated `internal_users.yml` file:
     ```
     sed -i 's/ELASTIC_ADMIN_USERNAME_TO_REPLACE/'$ELASTIC_ADMIN_USERNAME'/g' elastic/elastic-internal-users.yml
-    sed -i 's/ELASTIC_ADMIN_PASSWORD_TO_REPLACE/'$ELASTIC_ADMIN_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    sed -i 's~ELASTIC_ADMIN_PASSWORD_TO_REPLACE~'$ELASTIC_ADMIN_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     sed -i 's/ELASTIC_FLUENTD_USERNAME_TO_REPLACE/'$ELASTIC_FLUENTD_USERNAME'/g' elastic/elastic-internal-users.yml
-    sed -i 's/ELASTIC_FLUENTD_PASSWORD_TO_REPLACE/'$ELASTIC_FLUENTD_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    sed -i 's~ELASTIC_FLUENTD_PASSWORD_TO_REPLACE~'$ELASTIC_FLUENTD_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     sed -i 's/ELASTIC_JAEGER_USERNAME_TO_REPLACE/'$ELASTIC_JAEGER_USERNAME'/g' elastic/elastic-internal-users.yml
-    sed -i 's/ELASTIC_JAEGER_PASSWORD_TO_REPLACE/'$ELASTIC_JAEGER_PASSWORD_HASH'/g' elastic/elastic-internal-users.yml
+    sed -i 's~ELASTIC_JAEGER_PASSWORD_TO_REPLACE~'$ELASTIC_JAEGER_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     ```
     5. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
 

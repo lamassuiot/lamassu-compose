@@ -166,7 +166,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     6. In order to manage and initialize elastic's security module. This script requires that the admin's cert distinguished name matches the one specified in the `elasticsearch.yml` file 
 
     ```
-    ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt)
+    ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt | sed 's/subject=//g')
     sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
     ```
     7. Initializa/Update elastic's security plugin:

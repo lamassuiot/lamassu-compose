@@ -10,12 +10,14 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 ## Lamassu URLs
 
-| Service                                 | URL                          |
-|-----------------------------------------|------------------------------|
-| Lamassu UI                              | https://dev.lamassu.io:443   |
-| Keycloak (Authentication)               | https://dev.lamassu.io:8443  |
-| Kibana (Log inspection)                 | https://dev.lamassu.io:5601  |
-| Jaeger UI  (Tracing microservices calls)| http://dev.lamassu.io:16686  |
+| Service                                   | URL                          |
+|-------------------------------------------|------------------------------|
+| Lamassu UI                                | https://dev.lamassu.io:443   |
+| Keycloak (Authentication)                 | https://dev.lamassu.io:8443  |
+| Consul (Health Status & Service Discovery)| https://dev.lamassu.io:8501  |
+| Vault (PKI storage)                       | https://dev.lamassu.io:8200  |
+| Kibana (Log inspection)                   | https://dev.lamassu.io:5601  |
+| Jaeger UI  (Tracing microservices calls)  | http://dev.lamassu.io:16686  |
 
 ## Usage
 To launch Lamassu follow the next steps:

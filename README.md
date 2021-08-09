@@ -266,7 +266,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
       "users" : [ ]
     }'
     ```
-    9. Finally, try obtaning the list of elasticsearch indices using a keycloak user:
+    9. Finally, try obtaining the list of elasticsearch indices using a keycloak user:
     ```
     TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
 
@@ -288,6 +288,28 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
             "pri.store.size": "94.9kb"
         }
     ]
+    ```
+    Now, try to obtain the list of elasticsearch indices. This time use the `operator` user instead:
+    ```
+    TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=operator' --data-urlencode 'password=operator' |jq -r .access_token)
+
+    curl --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
+    ```
+    This time, the request is not succesful as the `operator` user has not assigned keyclok's `admin` role:
+    ```
+    {
+       "error":{
+          "root_cause":[
+             {
+                "type":"security_exception",
+                "reason":"no permissions for [indices:monitor/settings/get] and User [name=operator, backend_roles=[default-roles-lamassu, offline_access, uma_authorization, operator], requestedTenant=null]"
+             }
+          ],
+          "type":"security_exception",
+          "reason":"no permissions for [indices:monitor/settings/get] and User [name=operator, backend_roles=[default-roles-lamassu, offline_access, uma_authorization, operator], requestedTenant=null]"
+       },
+       "status":403
+    }
     ```
 
 9. Provision and configure Vault secret engine:

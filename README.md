@@ -21,7 +21,7 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
 2. Install the `jq` tool. It will be used later: https://stedolan.github.io/jq/download/ 
-3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Open Distro for Elasticsearch (from now on refered as elasric), uses 3 different users admin/admin fluentd/admin jaeger/admin. The first set of credentilas correspond to the elastic's admin user, while the remainig two are used by fluentd and jager respectivly. The main reason for having 3 different user credentials is to grant different permissions for each service.**
+3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin. Open Distro for Elasticsearch (from now on refered as elasric), uses 4 different users admin/admin fluentd/admin jaeger/admin kibana/admin. The first set of credentilas correspond to the elastic's admin user, while the remainig three are used by fluentd, jager and kibana respectivly. The main reason for having 4 different user credentials is to grant different permissions for each service.**
 
 
 ```
@@ -42,6 +42,8 @@ ELASTIC_FLUENTD_USERNAME=<ELASTIC_FLUENTD_USERNAME> //Elasticseach fluentd usern
 ELASTIC_FLUENTD_PASSWORD=<ELASTIC_FLUENTD_PASSWORD> //Elasticseach fluentd password.
 ELASTIC_JAEGER_USERNAME=<ELASTIC_JAEGER_USERNAME> //Elasticseach fluentd username.
 ELASTIC_JAEGER_PASSWORD=<ELASTIC_JAEGER_PASSWORD> //Elasticseach fluentd password.
+ELASTIC_KIBANA_USERNAME=<ELASTIC_KIBANA_USERNAME> //Kibana-Elasticsearch username.
+ELASTIC_KIBANA_PASSWORD=<ELASTIC_KIBANA_PASSWORD> //Kibana-Elasticsearch password.
 
 ```
 
@@ -107,20 +109,32 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     6. Keycloak also needs to be configured with a client used by the device manager to authenticate himself using a service account. **Note that the following commands assume the  credentials for the ADMIN user have been not changed (admin/admin). Otherwise just change the first command accordingly** 
     ```
     docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-    export KC_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
+    export KC_DEV_MANAGER_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
+    export KC_KIBANA_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=kibana -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -i)
+
     ```
-    7. Check the contents of the KC_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
+    7. Check the contents of the KC_DEV_MANAGER_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
     
     ```
-    echo $KC_CLIENT_UUID
+    echo $KC_DEV_MANAGER_CLIENT_UUID
+    echo $KC_KIBANA_CLIENT_UUID
     
-    export KC_CLIENT_UUID=`echo $KC_CLIENT_UUID | sed 's/\\r//g'`
+    export KC_DEV_MANAGER_CLIENT_UUID=`echo $KC_DEV_MANAGER_CLIENT_UUID | sed 's/\\r//g'`
+    export KC_KIBANA_CLIENT_UUID=`echo $KC_KIBANA_CLIENT_UUID | sed 's/\\r//g'`
     
-    export KC_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_CLIENT_UUID/client-secret -o | jq -r .value)    
+    export KC_DEV_MANAGER_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_DEV_MANAGER_CLIENT_UUID/client-secret -o | jq -r .value)    
+    export KC_KIBANA_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_KIBANA_CLIENT_UUID/client-secret -o | jq -r .value)    
     ```
     8. Replace the device manager client secret from the `.env` file:
     ```
-    sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_CLIENT_SECRET'/g' .env    
+    sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_DEV_MANAGER_CLIENT_SECRET'/g' .env    
+    sed -i 's/KIBANA_OIDC_CLIENT_SECRET/'$KC_KIBANA_CLIENT_SECRET'/g' kibana.yml    
+    ```
+    9. Elasic will integrare Keycloak using the OIDC protocol. Elastic will  be configured to map keycloak roles into elasticsearch roles. The mapping process looks for the JWT `role` claim. This claim is not present in the JWT obtained when logging in via keycloak, thus it is required to run the following commands:
+    ```
+    CLIENT_SCOPE_ROLE_ID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh get client-scopes -r lamassu | jq '.[] | select(.name=="roles") | .id' -r | sed -Ez '$ s/\n+$//')
+
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles' -s 'config."jsonType.label"=String'
     ```
     
 8. Configure Open Distro for Elasticsearch
@@ -142,12 +156,17 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
     ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
+    ELASTIC_KIBANA_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
+    ELASTIC_KIBANA_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
+
     echo $ELASTIC_ADMIN_USERNAME
     echo $ELASTIC_ADMIN_PASSWORD_HASH
     echo $ELASTIC_FLUENTD_USERNAME
     echo $ELASTIC_FLUENTD_PASSWORD_HASH
     echo $ELASTIC_JAEGER_USERNAME
     echo $ELASTIC_JAEGER_PASSWORD_HASH
+    echo $ELASTIC_KIBANA_USERNAME
+    echo $ELASTIC_KIBANA_PASSWORD_HASH
     ```
     3. Verify the above commands were successfully. It should be similar to this:
     ```
@@ -157,6 +176,8 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     $2y$12$Joux9O6vGU659lckKJqMeOSM6HLWJ6Ib4G02SYs7Yy3EQZV0fm.Jq
     jaeger
     $2y$12$DgUW3qo/Wgck5iu0gSeGUuS9iYlBcrSdk.1aBiyyhybObJ10ARgfW
+    kibana
+    $2y$12$FOMAPbHUV89WM5j9QV7seupdqhfTamLQlUiKMFnRFMEjOOiw2frJe
     ```
     4. Replace the templated `internal_users.yml` file:
     ```
@@ -166,6 +187,8 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's~ELASTIC_FLUENTD_PASSWORD_TO_REPLACE~'$ELASTIC_FLUENTD_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     sed -i 's/ELASTIC_JAEGER_USERNAME_TO_REPLACE/'$ELASTIC_JAEGER_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's~ELASTIC_JAEGER_PASSWORD_TO_REPLACE~'$ELASTIC_JAEGER_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
+    sed -i 's/ELASTIC_KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
+    sed -i 's~ELASTIC_KIBANA_PASSWORD_TO_REPLACE~'$ELASTIC_KIBANA_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     ```
     5. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
 

@@ -29,13 +29,13 @@ services:
       - 443:443
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   consul-server:
     image: consul:1.9
@@ -52,13 +52,13 @@ services:
     
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   vault:
     image: vault:1.7.3
@@ -78,13 +78,13 @@ services:
     
     links:
       - "consul-server:consul.dev.lamassu.io"
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   keycloak:
     build:
@@ -106,13 +106,13 @@ services:
       - ${KEYCLOAK_HTTPS_PORT}:${KEYCLOAK_HTTPS_PORT}
     depends_on:
       - keycloakdb    
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'  
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'  
   
   keycloakdb:
     image: 'postgres:13'
@@ -122,13 +122,13 @@ services:
       POSTGRES_PASSWORD: '${KEYCLOAK_DB_PASSWORD}'
     volumes:
       - 'auth_pg_data:/var/lib/postgresql/data'
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
     
 
   enroller:
@@ -186,13 +186,13 @@ services:
       - "consul-server:consul.dev.lamassu.io"
       - "ca:ca.dev.lamassu.io"
       - "jaeger:jaeger.dev.lamassu.io"
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
           
   enrollerdb:
     build:
@@ -209,13 +209,13 @@ services:
     
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
   ca:
     build:
        context: https://github.com/lamassuiot/lamassu-ca.git#develop
@@ -267,12 +267,12 @@ services:
       - consul-server
       - vault
       - fluentd
-    # logging:
-    #   driver: fluentd 
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+     driver: fluentd 
+     options:
+       fluentd-address: localhost:${FLUENTD_PORT}
+       fluentd-async-connect: 'true'
+       tag: '{{.Name}}'
 
   device-manager:
     build:
@@ -338,13 +338,13 @@ services:
     restart: on-failure
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   device-manager-db:
     build:
@@ -361,13 +361,13 @@ services:
     
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   ocsp:
     build:
@@ -399,13 +399,13 @@ services:
     depends_on:
       - consul-server
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   prometheus:
     build:
@@ -419,21 +419,21 @@ services:
       - "consul-server:consul.dev.lamassu.io"
     depends_on:
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
     
   jaeger:
     image: jaegertracing/all-in-one:latest
     environment:
       SPAN_STORAGE_TYPE: '${SPAN_STORAGE_TYPE}'
-      ES_USERNAME: 'elastic'
-      ES_PASSWORD: '${ELASTIC_PASSWORD}'
-      ES_SERVER_URLS: '${ES_SERVER_URLS}'
+      ES_USERNAME: 'jaeger'
+      ES_PASSWORD: 'admin'
+      ES_SERVER_URLS: 'https://elastic.dev.lamassu.io:9200'
       ES_TLS_ENABLED: 'true'
       ES_TLS_CA: '${ES_TLS_CA}'
       ES_TLS_CERT: '${ES_TLS_CERT}'
@@ -450,19 +450,18 @@ services:
       - 14268:14268
       - 14250:14250
       - 9411:9411
-    
     links:
       - "elastic:elastic.dev.lamassu.io"
     depends_on: 
       - elastic
       - fluentd
-    # restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    restart: on-failure
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   elastic:
     build:
@@ -472,7 +471,6 @@ services:
       node.name: 'elastic'
       discovery.type: 'single-node'
       network.host: "0.0.0.0"
-      ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
     volumes:
       - 'elastic_data:/usr/share/elasticsearch/data'
       - './lamassu/elastic_certs/elastic.crt:/usr/share/elasticsearch/config/elastic.crt'
@@ -487,6 +485,22 @@ services:
       - 9300:9300
     links:
       - "keycloak:dev.lamassu.io"
+
+  kibana:
+    image: amazon/opendistro-for-elasticsearch-kibana:1.13.2
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    volumes:
+      - './lamassu/elastic_certs/elastic.crt:/usr/share/kibana/config/keycloak.crt'
+      - './lamassu/elastic_certs/elastic.crt:/usr/share/kibana/config/kibana.crt'
+      - './lamassu/elastic_certs/elastic.key:/usr/share/kibana/config/kibana.key'
+      - './kibana.yml:/usr/share/kibana/config/kibana.yml'
+    links:
+      - "elastic:elastic.dev.lamassu.io"
+      - "keycloak:keycloak.dev.lamassu.io"
+
   # rabbitmq:
   #   build:
   #     context: ./

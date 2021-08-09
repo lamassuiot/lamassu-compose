@@ -8,6 +8,15 @@ Lamassu Compose
 
 This repository contains the Docker compose files for deploying the [Lamassu](https://www.lamassu.io) services in Docker.
 
+## Lamassu URLs
+
+|            |                              |
+|------------|------------------------------|
+| Lamassu UI | https://dev.lamassu.io:443   |
+| Keycloak   | https://dev.lamassu.i0:8443  |
+| Kibana     | https://dev.lamassu.io:5601  |
+| Jaeger UI  | http://dev.lamassu.io:16686/ |
+
 ## Usage
 To launch Lamassu follow the next steps:
 1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.

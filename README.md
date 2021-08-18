@@ -134,7 +134,6 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     8. Replace the device manager client secret from the `.env` file:
     ```
     sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_DEV_MANAGER_CLIENT_SECRET'/g' .env    
-    sed -i 's/KIBANA_OIDC_CLIENT_SECRET/'$KC_KIBANA_CLIENT_SECRET'/g' kibana.yml    
     ```
     9. Elasic will integrare Keycloak using the OIDC protocol. Elastic will  be configured to map keycloak roles into elasticsearch roles. The mapping process looks for the JWT `role` claim. This claim is not present in the JWT obtained when logging in via keycloak, thus it is required to run the following commands:
    ```
@@ -252,7 +251,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     6. Launch elastic and initializa/Update elastic's security plugin:
     ```
-       docker-compose up -d elastic
+    docker-compose up -d elastic
     ```
     ```
     docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
@@ -262,7 +261,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ELASTIC_ADMIN_PASSWORD=$(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env)
     BASIC_AUTH=$(printf "%s" "$ELASTIC_ADMIN_USERNAME:$ELASTIC_ADMIN_PASSWORD" | base64 )
 
-    curl --location --request PUT "https://$DOMAIN:9200/_opendistro/_security/api/rolesmapping/all_access" \
+    curl -k --location --request PUT "https://$DOMAIN:9200/_opendistro/_security/api/rolesmapping/all_access" \
     --header "Authorization: Basic $BASIC_AUTH" \
     --header 'Content-Type: application/json' \
     --data-raw '{
@@ -275,7 +274,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
 
-    curl --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
+    curl -k --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
     ```
     If everything worked as intended, the request should return an output similar to the one below:
     ```
@@ -299,7 +298,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=operator' --data-urlencode 'password=operator' |jq -r .access_token)
 
-    curl --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
+    curl -k --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
     ```
     This time, the request is not succesful as the `operator` user has not assigned keyclok's `admin` role:
     ```
@@ -320,8 +319,9 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     9. Kibana will be launched in order to inspect the logs stored in Elastic. Run the following commands to configure kibana:
     ```
     sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' kibana.yml
-    sed -i 's/KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
-    sed -i 's/KIBANA_PASSWORD_TO_REPLACE/'$ELASTIC_KIBANA_PASSWORD'/g' elastic/elastic-internal-users.yml
+    sed -i 's/KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' kibana.yml
+    sed -i 's/KIBANA_PASSWORD_TO_REPLACE/'$ELASTIC_KIBANA_PASSWORD'/g' kibana.yml
+    sed -i 's/KIBANA_KEYCLOAK_CLIENT_ID_TO_REPLACE/'$KC_KIBANA_CLIENT_SECRET'/g' kibana.yml
     ```
     And run kibana
     ```

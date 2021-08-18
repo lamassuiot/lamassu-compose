@@ -86,7 +86,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 7. Configure Keycloak:
     1. Run Elastic (This also will trigger the launching of Keyclaok and its DB): 
     ```
-    docker-compose up -d elastic
+    docker-compose up -d keycloak
     ```
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
 
@@ -250,7 +250,10 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt | sed 's/subject=//g')
     sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
     ```
-    6. Initializa/Update elastic's security plugin:
+    6. Launch elastic and initializa/Update elastic's security plugin:
+    ```
+       docker-compose up -d elastic
+    ```
     ```
     docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
     ```
@@ -320,7 +323,10 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's/KIBANA_PASSWORD_TO_REPLACE/'$ELASTIC_KIBANA_PASSWORD'/g' elastic/elastic-internal-users.yml
     ```
-
+    And run kibana
+    ```
+    docker-compose up -d kibana
+    ```
 9. Provision and configure Vault secret engine:
     1. Run Vault: 
     ```

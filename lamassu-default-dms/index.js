@@ -33,7 +33,7 @@ const server = https.createServer(options, async (req, res) => {
     const deviceId = req.url.split("/dms-renew/")[1]
     console.log(deviceId);
     const aps = "Lamassu-Root-CA2-RSA2048"
-    const CMD_ENROLL = 'estclient reenroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+deviceId+'.csr -out /app/devices-crypto-material/device-reenrolled-'+deviceId+'.crt -aps ' + aps + ' -certs /app/devices-crypto-material/device-'+deviceId+'.crt -key /app/devices-crypto-material/device-'+deviceId+'.key' ;
+    const CMD_ENROLL = 'estclient reenroll -server dev.lamassu.io:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+deviceId+'.csr -out /app/devices-crypto-material/device-reenrolled-'+deviceId+'.crt -aps ' + aps + ' -certs /app/devices-crypto-material/device-'+deviceId+'.crt -key /app/devices-crypto-material/device-'+deviceId+'.key' ;
     if (await execCmd(CMD_ENROLL) == 0) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Executed correctly" }));
@@ -53,7 +53,7 @@ const server = https.createServer(options, async (req, res) => {
       const data = Buffer.concat(chunks).toString("utf-8");
 
       fs.writeFileSync('/app/devices-crypto-material/device-'+cn+'.csr', data)
-      const CMD_ENROLL = 'estclient enroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
+      const CMD_ENROLL = 'estclient enroll -server dev.lamassu.io:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
       console.log(CMD_ENROLL);
       if (await execCmd(CMD_ENROLL) == 0) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -94,7 +94,7 @@ const server = https.createServer(options, async (req, res) => {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ message: "Executed correctly" }));
       }else{
-        const CMD_ENROLL = 'estclient enroll -server lamassu.zpd.ikerlan.es:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
+        const CMD_ENROLL = 'estclient enroll -server dev.lamassu.io:9998 -explicit /app/device-manager-anchor.crt -csr /app/devices-crypto-material/device-'+cn+'.csr -out /app/devices-crypto-material/device-'+cn+'.crt -aps ' + aps + ' -certs /app/enrolled-dms.crt -key /app/enrolled-dms.key' ;
         console.log(CMD_ENROLL);
         if (await execCmd(CMD_ENROLL) == 0) {
           res.writeHead(200, { "Content-Type": "application/json" });

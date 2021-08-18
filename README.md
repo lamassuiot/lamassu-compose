@@ -451,7 +451,7 @@ docker-compose up -d
     6. And finally, start the DMS "server":
     ```
     cd lamassu-default-dms
-    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
+    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' index.js
     docker-compose up -d
     ```
     The server has the following endpoint:

@@ -30,6 +30,17 @@ ELASTIC_JAEGER_USERNAME_TO_REPLACE:
   opendistro_security_roles:
   - "logstash"
   description: ""
+  
+ELASTIC_KIBANA_USERNAME_TO_REPLACE:
+  hash: "ELASTIC_KIBANA_PASSWORD_TO_REPLACE"
+  reserved: false
+  opendistro_security_roles:
+  - "kibana_user"
+  - "kibanauser"
+  - "readall"
+  - all_access
+  - readall_and_monitor
+  description: ""
 
 # kibanaserver:
 #   hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."

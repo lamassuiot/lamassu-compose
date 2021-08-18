@@ -62,6 +62,10 @@ After defining the env variables, generarte the self signed certificate:
 ./compose-builder/gen-self-signed-certs.sh
 ```
 
+Elastic accepts keys in the pkcs8 format. The following command will convert the pem encoded key to the correspondig pkcs8 encoding format.
+```
+openssl pkcs8 -in lamassu/elastic_certs/elastic.key -topk8 -out lamassu/elastic_certs/elastic-pkcs8.key -nocrypt
+```
 5. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `dev.lamassu.io` with your domain (The same as the exported DOMAIN env variable).**  
 ```
 127.0.0.1   dev.lamassu.io
@@ -134,17 +138,12 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     CLIENT_SCOPE_ROLE_ID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh get client-scopes -r lamassu | jq '.[] | select(.name=="roles") | .id' -r | sed -Ez '$ s/\n+$//')
 
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles' -s 'config."jsonType.label"=String'
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles3' -s 'config."jsonType.label"=String'
     ```
     
 8. Configure Open Distro for Elasticsearch
 
-    1. Elastic accepts keys in the pkcs8 format. The following command will convert the pem encoded key to the correspondig pkcs8 encoding format.
-    ```
-    openssl pkcs8 -in lamassu/elastic_certs/elastic.key -topk8 -out lamassu/elastic_certs/elastic-pkcs8.key -nocrypt
-    ```
-
-    2. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
+    1. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
 
     ```
     ELASTIC_ADMIN_USERNAME=$(awk -F'=' '/^ELASTIC_ADMIN_USERNAME/ { print $2}' .env)
@@ -156,7 +155,8 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
     ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
-    ELASTIC_KIBANA_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
+    ELASTIC_KIBANA_USERNAME=$(awk -F'=' '/^ELASTIC_KIBANA_USERNAME/ { print $2}' .env)
+    ELASTIC_KIBANA_PASSWORD=$(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env)
     ELASTIC_KIBANA_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
 
     echo $ELASTIC_ADMIN_USERNAME
@@ -168,7 +168,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     echo $ELASTIC_KIBANA_USERNAME
     echo $ELASTIC_KIBANA_PASSWORD_HASH
     ```
-    3. Verify the above commands were successfully. It should be similar to this:
+    2. Verify the above commands were successfully. It should be similar to this:
     ```
     admin
     $2y$12$WYfRkIctUpVY7YDdZfHU.elQ/tRBKWQNqPqKsQEtk/zh9g3DmVSP2
@@ -179,7 +179,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     kibana
     $2y$12$FOMAPbHUV89WM5j9QV7seupdqhfTamLQlUiKMFnRFMEjOOiw2frJe
     ```
-    4. Replace the templated `internal_users.yml` file:
+    3. Replace the templated `internal_users.yml` file:
     ```
     sed -i 's/ELASTIC_ADMIN_USERNAME_TO_REPLACE/'$ELASTIC_ADMIN_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's~ELASTIC_ADMIN_PASSWORD_TO_REPLACE~'$ELASTIC_ADMIN_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
@@ -190,22 +190,22 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/ELASTIC_KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's~ELASTIC_KIBANA_PASSWORD_TO_REPLACE~'$ELASTIC_KIBANA_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     ```
-    5. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
+    4. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
 
     ```
     sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' elastic/elastic-security-config.yml
     ```
-    6. In order to manage and initialize elastic's security module. This script requires that the admin's cert distinguished name matches the one specified in the `elasticsearch.yml` file 
+    5. In order to manage and initialize elastic's security module. This script requires that the admin's cert distinguished name matches the one specified in the `elasticsearch.yml` file 
 
     ```
     ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt | sed 's/subject=//g')
     sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
     ```
-    7. Initializa/Update elastic's security plugin:
+    6. Initializa/Update elastic's security plugin:
     ```
     docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
     ```
-    8. The remaining configuration steps will determine the permission that each authenticated keyclaok user will have whitin elastic. The following command will assign full access ONLY to keycloak users having the KEYCLOAK `admin` role. 
+    7. The remaining configuration steps will determine the permission that each authenticated keyclaok user will have whitin elastic. The following command will assign full access ONLY to keycloak users having the KEYCLOAK `admin` role. 
     ```
     ELASTIC_ADMIN_PASSWORD=$(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env)
     BASIC_AUTH=$(printf "%s" "$ELASTIC_ADMIN_USERNAME:$ELASTIC_ADMIN_PASSWORD" | base64 )
@@ -219,7 +219,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
       "users" : [ ]
     }'
     ```
-    9. Finally, try obtaning the list of elasticsearch indices using a keycloak user:
+    8. Finally, try obtaning the list of elasticsearch indices using a keycloak user:
     ```
     TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
 
@@ -241,6 +241,12 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
             "pri.store.size": "94.9kb"
         }
     ]
+    ```
+    9. Kibana will be launched in order to inspect the logs stored in Elastic. Run the following commands to configure kibana:
+    ```
+    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' kibana.yml
+    sed -i 's/KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
+    sed -i 's/KIBANA_PASSWORD_TO_REPLACE/'$ELASTIC_KIBANA_PASSWORD'/g' elastic/elastic-internal-users.yml
     ```
 
 9. Provision and configure Vault secret engine:

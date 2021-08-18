@@ -221,6 +221,7 @@ services:
        context: https://github.com/lamassuiot/lamassu-ca.git#develop
     environment:
       CA_PORT: '${CA_PORT}'
+      CA_OCSPURL: '${CA_OCSPURL}'
       CA_VAULTADDRESS: '${VAULT_API_ADDR}'
       CA_VAULTROLEID: '${CA_VAULTROLEID}'
       CA_VAULTSECRETID: '${CA_VAULTSECRETID}'

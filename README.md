@@ -10,12 +10,14 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 ## Lamassu URLs
 
-| Service                                 | URL                          |
-|-----------------------------------------|------------------------------|
-| Lamassu UI                              | https://dev.lamassu.io:443   |
-| Keycloak (Authentication)               | https://dev.lamassu.io:8443  |
-| Kibana (Log inspection)                 | https://dev.lamassu.io:5601  |
-| Jaeger UI  (Tracing microservices calls)| http://dev.lamassu.io:16686  |
+| Service                                   | URL                          |
+|-------------------------------------------|------------------------------|
+| Lamassu UI                                | https://dev.lamassu.io:443   |
+| Keycloak (Authentication)                 | https://dev.lamassu.io:8443  |
+| Consul (Health Status & Service Discovery)| https://dev.lamassu.io:8501  |
+| Vault (PKI storage)                       | https://dev.lamassu.io:8200  |
+| Kibana (Log inspection)                   | https://dev.lamassu.io:5601  |
+| Jaeger UI  (Tracing microservices calls)  | http://dev.lamassu.io:16686  |
 
 ## Usage
 To launch Lamassu follow the next steps:
@@ -135,12 +137,59 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/KIBANA_OIDC_CLIENT_SECRET/'$KC_KIBANA_CLIENT_SECRET'/g' kibana.yml    
     ```
     9. Elasic will integrare Keycloak using the OIDC protocol. Elastic will  be configured to map keycloak roles into elasticsearch roles. The mapping process looks for the JWT `role` claim. This claim is not present in the JWT obtained when logging in via keycloak, thus it is required to run the following commands:
-    ```
+   ```
     CLIENT_SCOPE_ROLE_ID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh get client-scopes -r lamassu | jq '.[] | select(.name=="roles") | .id' -r | sed -Ez '$ s/\n+$//')
 
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles3' -s 'config."jsonType.label"=String'
+    docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles' -s 'config."jsonType.label"=String'
+   ```
+    10. The last step is to validate that the obtained JWT token includes the `role` claim. The following command will authenticate the enroller/enroller user:
+   ```
+   curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token | jq -R 'split(".") | .[1] | @base64d | fromjson'
+   ```
+    The following json represents a decoded JWT token obtained by running the previous command. As it can be seen, the last claim in the token is the `roles` claim containing the list of roles assigned to the enroller user.
+   ```
+   {
+      "exp": 1628503449,
+      "iat": 1628503149,
+      "jti": "8b170887-3ca7-4102-bbb6-87eb60821889",
+      "iss": "https://dev.lamassu.io:8443/auth/realms/lamassu",
+      "aud": "account",
+      "sub": "469bc497-5a11-4ca0-b5cf-f91db850f2a7",
+      "typ": "Bearer",
+      "azp": "frontend",
+      "session_state": "0bac4e43-648e-4f4d-8755-32bf0c191391",
+      "acr": "1",
+      "allowed-origins": [
+        "*"
+      ],
+      "realm_access": {
+        "roles": [
+          "default-roles-lamassu",
+          "offline_access",
+          "admin",
+          "uma_authorization"
+        ]
+      },
+      "resource_access": {
+        "account": {
+          "roles": [
+            "manage-account",
+            "manage-account-links",
+            "view-profile"
+          ]
+        }
+      },
+      "scope": "profile email",
+      "email_verified": false,
+      "preferred_username": "enroller", 
+      "roles": [
+        "default-roles-lamassu",
+        "offline_access",
+        "admin",
+        "uma_authorization"
+      ]
+    }
     ```
-    
 8. Configure Open Distro for Elasticsearch
 
     1. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
@@ -241,6 +290,29 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
             "pri.store.size": "94.9kb"
         }
     ]
+    ```
+    
+    Now, try to obtain the list of elasticsearch indices. This time use the `operator` user instead:
+    ```
+    TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=operator' --data-urlencode 'password=operator' |jq -r .access_token)
+
+    curl --location --request GET "https://$DOMAIN:9200/_cat/indices?format=json" --header "Authorization: Bearer $TOKEN"
+    ```
+    This time, the request is not succesful as the `operator` user has not assigned keyclok's `admin` role:
+    ```
+    {
+       "error":{
+          "root_cause":[
+             {
+                "type":"security_exception",
+                "reason":"no permissions for [indices:monitor/settings/get] and User [name=operator, backend_roles=[default-roles-lamassu, offline_access, uma_authorization, operator], requestedTenant=null]"
+             }
+          ],
+          "type":"security_exception",
+          "reason":"no permissions for [indices:monitor/settings/get] and User [name=operator, backend_roles=[default-roles-lamassu, offline_access, uma_authorization, operator], requestedTenant=null]"
+       },
+       "status":403
+    }
     ```
     9. Kibana will be launched in order to inspect the logs stored in Elastic. Run the following commands to configure kibana:
     ```

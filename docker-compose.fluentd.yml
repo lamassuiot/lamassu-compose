@@ -30,12 +30,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   consul-server:
     image: consul:1.9
@@ -53,12 +53,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   vault:
     image: vault:1.7.3
@@ -79,12 +79,12 @@ services:
     links:
       - "consul-server:consul.dev.lamassu.io"
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   keycloak:
     build:
@@ -107,12 +107,12 @@ services:
     depends_on:
       - keycloakdb    
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'  
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'  
   
   keycloakdb:
     image: 'postgres:13'
@@ -123,12 +123,12 @@ services:
     volumes:
       - 'auth_pg_data:/var/lib/postgresql/data'
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
     
 
   enroller:
@@ -187,12 +187,12 @@ services:
       - "ca:ca.dev.lamassu.io"
       - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
           
   enrollerdb:
     build:
@@ -210,12 +210,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
   ca:
     build:
        context: https://github.com/lamassuiot/lamassu-ca.git#develop
@@ -268,12 +268,12 @@ services:
       - consul-server
       - vault
       - fluentd
-    # logging:
-    #  driver: fluentd 
-    #  options:
-    #    fluentd-address: localhost:${FLUENTD_PORT}
-    #    fluentd-async-connect: 'true'
-    #    tag: '{{.Name}}'
+    logging:
+     driver: fluentd 
+     options:
+       fluentd-address: localhost:${FLUENTD_PORT}
+       fluentd-async-connect: 'true'
+       tag: '{{.Name}}'
 
   device-manager:
     build:
@@ -340,12 +340,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   device-manager-db:
     build:
@@ -363,12 +363,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   ocsp:
     build:
@@ -399,12 +399,12 @@ services:
       - consul-server
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   prometheus:
     build:
@@ -419,12 +419,12 @@ services:
     depends_on:
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
     
   jaeger:
     image: jaegertracing/all-in-one:latest
@@ -455,12 +455,12 @@ services:
       - elastic
       - fluentd
     restart: on-failure
-    # logging:
-    #   driver: fluentd
-    #   options:
-    #     fluentd-address: localhost:${FLUENTD_PORT}
-    #     fluentd-async-connect: 'true'
-    #     tag: '{{.Name}}'
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
 
   elastic:
     build:

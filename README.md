@@ -200,29 +200,25 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ADMIN_DN=$(openssl x509 -subject -nameopt RFC2253 -noout -in lamassu/elastic_certs/elastic.crt | sed 's/subject=//g')
     sed -i 's/ADMIN_DN_TO_REPLACE/'$ADMIN_DN'/g' elastic/elasticsearch.yml
     ```
-    2. Launch Elastic:
-    ```
-    docker-compose up -d elastic
-    ```
 
-    3. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
+    2. As mentioned earlier, elastic will bootstraped with 3 users. Elastic uses a special file listing all internal users named `internal_users.yml`. This file also containes the hashed credentials of each user as well as the main roles assigned to them. Run the following commands to configure the file accordingly 
 
     ```
     ELASTIC_ADMIN_USERNAME=$(awk -F'=' '/^ELASTIC_ADMIN_USERNAME/ { print $2}' .env)
-    ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
+    ELASTIC_ADMIN_PASSWORD_HASH=$(docker-compose run elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_ADMIN_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
     ```
     ```
     ELASTIC_FLUENTD_USERNAME=$(awk -F'=' '/^ELASTIC_FLUENTD_USERNAME/ { print $2}' .env)
-    ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
+    ELASTIC_FLUENTD_PASSWORD_HASH=$(docker-compose run elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_FLUENTD_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
     ```
     ```
     ELASTIC_JAEGER_USERNAME=$(awk -F'=' '/^ELASTIC_JAEGER_USERNAME/ { print $2}' .env)
-    ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
+    ELASTIC_JAEGER_PASSWORD_HASH=$(docker-compose run elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_JAEGER_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
     ```
     ```
     ELASTIC_KIBANA_USERNAME=$(awk -F'=' '/^ELASTIC_KIBANA_USERNAME/ { print $2}' .env)
     ELASTIC_KIBANA_PASSWORD=$(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env)
-    ELASTIC_KIBANA_PASSWORD_HASH=$(docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
+    ELASTIC_KIBANA_PASSWORD_HASH=$(docker-compose run elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh -p $(awk -F'=' '/^ELASTIC_KIBANA_PASSWORD/ { print $2}' .env) | tr -dc '[[:print:]]')
     ```
     ```
     echo $ELASTIC_ADMIN_USERNAME
@@ -234,7 +230,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     echo $ELASTIC_KIBANA_USERNAME
     echo $ELASTIC_KIBANA_PASSWORD_HASH
     ```
-    4. Verify the above commands were successfully. It should be similar to this:
+    3. Verify the above commands were successfully. It should be similar to this:
     ```
     admin
     $2y$12$WYfRkIctUpVY7YDdZfHU.elQ/tRBKWQNqPqKsQEtk/zh9g3DmVSP2
@@ -245,7 +241,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     kibana
     $2y$12$FOMAPbHUV89WM5j9QV7seupdqhfTamLQlUiKMFnRFMEjOOiw2frJe
     ```
-    5. Replace the templated `internal_users.yml` file:
+    4. Replace the templated `internal_users.yml` file:
     ```
     sed -i 's/ELASTIC_ADMIN_USERNAME_TO_REPLACE/'$ELASTIC_ADMIN_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's~ELASTIC_ADMIN_PASSWORD_TO_REPLACE~'$ELASTIC_ADMIN_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
@@ -256,13 +252,17 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/ELASTIC_KIBANA_USERNAME_TO_REPLACE/'$ELASTIC_KIBANA_USERNAME'/g' elastic/elastic-internal-users.yml
     sed -i 's~ELASTIC_KIBANA_PASSWORD_TO_REPLACE~'$ELASTIC_KIBANA_PASSWORD_HASH'~g' elastic/elastic-internal-users.yml
     ```
-    6. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
+    5. Elastic will be configured to accept incoming requests from authenticated keycloak users by providing a valid bearer token. Internal users defined in the `internal_users.yml` must be authenticated through using http basic auth. Run the following commands to configure elasticsearch's integration with keycloak:
 
     ```
     sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' elastic/elastic-security-config.yml
     ```
+    6. Launch Elastic:
+    ```
+    docker-compose up -d elastic
+    ```
+    
     7. Initializa/Update elastic's security plugin:
-
     ```
     docker-compose exec elastic /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh -cd /usr/share/elasticsearch/plugins/opendistro_security/securityconfig/ -icl -nhnv -cacert /usr/share/elasticsearch/config/elastic.crt -cert /usr/share/elasticsearch/config/elastic.crt -key /usr/share/elasticsearch/config/elastic-pkcs8.key
     ```

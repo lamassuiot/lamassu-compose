@@ -390,8 +390,8 @@ services:
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
       - './lamassu/ocsp_certs:/certs'
-    
     links:
+      - "vault:vault.dev.lamassu.io"
       - "consul-server:consul.dev.lamassu.io"
       - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure

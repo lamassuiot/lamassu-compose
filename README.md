@@ -117,7 +117,6 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
     export KC_DEV_MANAGER_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=device-manager -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -s 'serviceAccountsEnabled=true' -i)
     export KC_KIBANA_CLIENT_UUID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create clients -r lamassu -s clientId=kibana -s 'redirectUris=["*"]' -s 'webOrigins=["*"]' -s 'clientAuthenticatorType=client-secret' -i)
-
     ```
     7. Check the contents of the KC_DEV_MANAGER_CLIENT_UUID variable containing a UUID string such as `8bfc57b4-23d6-4a1d-893a-592d3a579706`:
     
@@ -139,13 +138,13 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     ```
     sed -i 's/KEYCLOAK_DEV_MANAGER_CLIENT_SECRET_TO_BE_REPLACED/'$KC_DEV_MANAGER_CLIENT_SECRET'/g' .env    
     ```
-    9. Elasic will integrare Keycloak using the OIDC protocol. Elastic will  be configured to map keycloak roles into elasticsearch roles. The mapping process looks for the JWT `role` claim. This claim is not present in the JWT obtained when logging in via keycloak, thus it is required to run the following commands:
+    9. Elasic will integrare Keycloak using the OIDC protocol. Elastic will  be configured to map keycloak roles into elasticsearch roles. The mapping process looks for the JWT `roles` claim. This claim is not present in the JWT obtained when logging in via keycloak, thus it is required to run the following commands:
    ```
     CLIENT_SCOPE_ROLE_ID=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh get client-scopes -r lamassu | jq '.[] | select(.name=="roles") | .id' -r | sed -Ez '$ s/\n+$//')
 
     docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create client-scopes/$CLIENT_SCOPE_ROLE_ID/protocol-mappers/models -r lamassu -s name=roles -s protocol=openid-connect -s protocolMapper=oidc-usermodel-realm-role-mapper -s 'config."multivalued"=true' -s 'config."userinfo.token.claim"=true' -s 'config."id.token.claim"=true' -s 'config."access.token.claim"=true' -s 'config."claim.name"=roles' -s 'config."jsonType.label"=String'
    ```
-    10. The last step is to validate that the obtained JWT token includes the `role` claim. The following command will authenticate the enroller/enroller user:
+    10. The last step is to validate that the obtained JWT token includes the `roles` claim. The following command will authenticate the enroller/enroller user:
    ```
    curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token | jq -R 'split(".") | .[1] | @base64d | fromjson'
    ```

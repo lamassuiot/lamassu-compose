@@ -500,7 +500,7 @@ services:
       - './kibana.yml:/usr/share/kibana/config/kibana.yml'
     links:
       - "elastic:elastic.dev.lamassu.io"
-      - "keycloak:keycloak.dev.lamassu.io"
+      - "keycloak:dev.lamassu.io"
 
   # rabbitmq:
   #   build:

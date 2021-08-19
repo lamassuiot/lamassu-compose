@@ -59,7 +59,7 @@ do
     cp lamassu/lamassu.crt lamassu/"$s"_certs/jaeger.crt
 done
 
-keycloak_dependant_services=(ca device-manager enroller ocsp)
+keycloak_dependant_services=(ca device-manager enroller ocsp elastic)
 for s in "${keycloak_dependant_services[@]}"; 
 do
     mkdir -p lamassu/"$s"_certs

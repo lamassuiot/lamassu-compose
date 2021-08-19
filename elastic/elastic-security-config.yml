@@ -4,7 +4,17 @@ _meta:
 
 config:
   dynamic:
-    authc:
+    authc: 
+      basic_internal_auth_domain:
+        description: "Authenticate via HTTP Basic against internal users database"
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: internal
       openid_auth_domain:
         http_enabled: true
         transport_enabled: true
@@ -21,14 +31,3 @@ config:
             openid_connect_idp.pemtrustedcas_filepath: "/usr/share/elasticsearch/config/keycloak.crt"
         authentication_backend:
           type: noop
-        
-      basic_internal_auth_domain:
-        description: "Authenticate via HTTP Basic against internal users database"
-        http_enabled: true
-        transport_enabled: true
-        order: 2
-        http_authenticator:
-          type: basic
-          challenge: true
-        authentication_backend:
-          type: intern

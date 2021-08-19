@@ -8,7 +8,7 @@ server.ssl.key: /usr/share/kibana/config/kibana.key
 opendistro_security.auth.type: "openid"
 
 # The IdP metadata endpoint
-opendistro_security.openid.connect_url: "https://keycloak.dev.lamassu.io:8443/auth/realms/lamassu/.well-known/openid-configuration"
+opendistro_security.openid.connect_url: "https://dev.lamassu.io:8443/auth/realms/lamassu/.well-known/openid-configuration"
 
 # The ID of the OpenID Connect client in your IdP
 opendistro_security.openid.client_id: "kibana"

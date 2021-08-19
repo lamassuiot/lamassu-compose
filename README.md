@@ -84,7 +84,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
     
 7. Configure Keycloak:
-    1. Run Elastic (This also will trigger the launching of Keyclaok and its DB): 
+    1. Run Keycloak: 
     ```
     docker-compose up -d keycloak
     ```

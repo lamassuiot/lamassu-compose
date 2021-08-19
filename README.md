@@ -127,9 +127,12 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     
     export KC_DEV_MANAGER_CLIENT_UUID=`echo $KC_DEV_MANAGER_CLIENT_UUID | sed 's/\\r//g'`
     export KC_KIBANA_CLIENT_UUID=`echo $KC_KIBANA_CLIENT_UUID | sed 's/\\r//g'`
+    ```
     
+    ```
     export KC_DEV_MANAGER_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_DEV_MANAGER_CLIENT_UUID/client-secret -o | jq -r .value)
-    
+    ```
+    ```
     export KC_KIBANA_CLIENT_SECRET=$(docker-compose exec keycloak /opt/jboss/keycloak/bin/kcadm.sh create -r lamassu clients/$KC_KIBANA_CLIENT_UUID/client-secret -o | jq -r .value)
     ```
     8. Replace the device manager client secret from the `.env` file:

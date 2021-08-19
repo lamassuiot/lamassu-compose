@@ -38,7 +38,7 @@ do
     cp lamassu/lamassu.crt lamassu/"$s"_certs/consul-server.crt
 done
 
-elastic_dependant_services=(jaeger)
+elastic_dependant_services=(jaeger fluentd)
 for s in "${elastic_dependant_services[@]}"; 
 do
     mkdir -p lamassu/"$s"_certs

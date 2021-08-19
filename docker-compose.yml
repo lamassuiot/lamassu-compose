@@ -390,6 +390,8 @@ services:
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
       - './lamassu/ocsp_certs:/certs'
+    ports:
+      - 9098:9098
     links:
       - "vault:vault.dev.lamassu.io"
       - "consul-server:consul.dev.lamassu.io"

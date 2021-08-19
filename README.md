@@ -8,6 +8,9 @@ Lamassu Compose
 
 This repository contains the Docker compose files for deploying the [Lamassu](https://www.lamassu.io) services in Docker.
 
+<img src="lamassu-app.png" alt="Lamassu App" title="Lamassu" />
+
+
 ## Lamassu URLs
 
 | Service                                   | URL                          |

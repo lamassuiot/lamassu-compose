@@ -16,6 +16,8 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 The issue should be solved once the `fluentd-async` docker plugin is updated with this PR: https://github.com/fluent/fluent-logger-golang/pull/82 
 
+To prevent his issue from happening, the docker-compose `logging` directive has been commented. 
+
 ## Lamassu URLs
 
 | Service                                   | URL                          |

@@ -10,6 +10,11 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 <img src="lamassu-app.png" alt="Lamassu App" title="Lamassu" />
 
+## Known Issues
+
+:warning: As per this release, docker has a known bug that causes dockerd hanging when fluentd is shut down. This issue occurs as docker will try to reconnect to fluentd indefinetly even if the write options are specified. For mor information refer to the issue: https://github.com/moby/moby/issues/40063 
+
+The issue should be solved once the `fluentd-async` docker plugin is updated with this PR: https://github.com/fluent/fluent-logger-golang/pull/82 
 
 ## Lamassu URLs
 

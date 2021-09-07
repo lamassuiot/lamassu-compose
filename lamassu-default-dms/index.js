@@ -81,7 +81,23 @@ const server = https.createServer(options, async (req, res) => {
 
       var CMD_GEN_CSR
       if (data.key_type == "ec") {
-        CMD_GEN_CSR = 'openssl req -nodes -newkey ec -pkeyopt ec_paramgen_curve:secp' + data.key_bits +'r1  -keyout /app/devices-crypto-material/device-'+cn+'.key -out /app/devices-crypto-material/device-'+cn+'.csr -subj "/C=' + c +'/ST=' + st +'/L=' + l +'/O=' + o +'/OU=' + ou +'/CN='+cn+'"'
+        eccAlg="";
+        switch (data.key_bits) {
+                case 256:
+                        eccAlg="prime256v1";
+                        break;
+                case 384:
+                        eccAlg="secp384r1";
+                        break;
+                case 224:
+                        eccAlg="secp224r1";
+                        break;
+                default:
+                        eccAlg="UNKNOWN";
+                        break;
+        }
+
+        CMD_GEN_CSR = 'openssl req -nodes -newkey ec -pkeyopt ec_paramgen_curve:'+ eccAlg +' -keyout /app/devices-crypto-material/device-'+cn+'.key -out /app/devices-crypto-material/device-'+cn+'.csr -subj "/C=' + c +'/ST=' + st +'/L=' + l +'/O=' + o +'/OU=' + ou +'/CN='+cn+'"'
       }else{
         // CMD_GEN_CSR = 'openssl req -nodes -newkey rsa:' + data.key_bits +' -keyout /app/devices-crypto-material/device-'+cn+'.key -out /app/devices-crypto-material/device-'+cn+'.csr -subj "/C=' + c +'/ST=' + st +'/L=' + l +'/O=' + o +'/OU=' + ou +'/CN='+cn+'"'
         CMD_GEN_CSR = 'openssl req -nodes -newkey rsa:' + data.key_bits +' -keyout /app/devices-crypto-material/device-'+cn+'.key -out /app/devices-crypto-material/device-'+cn+'.csr -subj "/CN='+cn+'"'

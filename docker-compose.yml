@@ -103,9 +103,7 @@ services:
     ports:
       - ${KEYCLOAK_PORT}:${KEYCLOAK_PORT}
       - ${KEYCLOAK_HTTPS_PORT}:${KEYCLOAK_HTTPS_PORT}
-    depends_on:
-      - keycloakdb    
-    restart: on-failure
+    depends_on    restart: on-failure
     # logging:
     #   driver: fluentd
     #   options:
@@ -121,6 +119,51 @@ services:
       POSTGRES_PASSWORD: '${KEYCLOAK_DB_PASSWORD}'
     volumes:
       - 'auth_pg_data:/var/lib/postgresql/data'
+    networks:
+      - lamassu-net
+    depends_on:
+      - fluentd
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:${FLUENTD_PORT}
+        fluentd-async-connect: 'true'
+        tag: '{{.Name}}'
+
+  enrollerscep:
+    build: 
+      context: https://github.com/lamassuiot/enrolle
+      dockerfile: Dockerfile.scep
+    environment:
+      SCEP_PORT: '${ENROLLERSCEP_PORT}'
+      SCEP_POSTGRESUSER: '${SCEP_POSTGRESUSER}'
+      SCEP_POSTGRESDB: '${SCEP_POSTGRESDB}'
+      SCEP_POSTGRESPASSWORD: '${SCEP_POSTGRESPASSWORD}'
+      SCEP_POSTGRESHOSTNAME: '${SCEP_POSTGRESHOSTNAME}'
+      SCEP_POSTGRESPORT: '${SCEP_POSTGRESPORT}'
+      SCEP_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
+      SCEP_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
+      SCEP_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
+      SCEP_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
+      SCEP_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
+      SCEP_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
+      SCEP_KEYCLOAKCA: '${ENROLLERSCEP_KEYCLOAKCA}'
+      SCEP_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
+      SCEP_CERTFILE: '${ENROLLERSCEP_CERTFILE}'
+      SCEP_KEYFILE: '${ENROLLERSCEP_KEYFILE}'
+      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
+      SCEP_CONSULHOST: '${CONSUL_HOST}'
+      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
+      SCEP_CONSULCA: '${ENROLLERSCEP_CONSULCA}'
+      JAEGER_SERVICE_NAME: '${ENROLLERSCEP_JAEGER_SERVICE_NAME}'
+      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
+      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
+    volumes:
+      - './lamassu/enrollerscep_certs:/certs'
+    networks:
+      - lamassu-net
+    ports:
+      - ${ENROLLERSCEP_PORT}:${ENROLLERSCEP_PORT}
     restart: on-failure
     # logging:
     #   driver: fluentd
@@ -128,7 +171,6 @@ services:
     #     fluentd-address: localhost:${FLUENTD_PORT}
     #     fluentd-async-connect: 'true'
     #     tag: '{{.Name}}'
-    
 
   enroller:
     build:
@@ -280,7 +322,6 @@ services:
       dockerfile: Dockerfile.devices
     environment:
       DEVICES_PORT: '${DEVICES_PORT}'
-
       DEVICES_CERTFILE: '${DEVICES_CERTFILE}'
       DEVICES_KEYFILE: '${DEVICES_KEYFILE}'
 
@@ -309,6 +350,7 @@ services:
       DEVICES_CASERVERADDR: '${DEVICES_CASERVERADDR}'
 
       JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
+
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
       
@@ -406,6 +448,7 @@ services:
     #     fluentd-address: localhost:${FLUENTD_PORT}
     #     fluentd-async-connect: 'true'
     #     tag: '{{.Name}}'
+
 
   prometheus:
     build:

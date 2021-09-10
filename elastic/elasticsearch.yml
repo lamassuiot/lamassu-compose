@@ -1,0 +1,12 @@
+opendistro_security.ssl.transport.pemkey_filepath: elastic-pkcs8.key
+opendistro_security.ssl.transport.pemcert_filepath: elastic.crt
+opendistro_security.ssl.transport.pemtrustedcas_filepath: elastic.crt
+
+opendistro_security.ssl.http.enabled: true
+opendistro_security.ssl.http.pemkey_filepath: elastic-pkcs8.key
+opendistro_security.ssl.http.pemcert_filepath: elastic.crt
+opendistro_security.ssl.http.pemtrustedcas_filepath: elastic.crt
+
+opendistro_security.authcz.admin_dn:
+  - "ADMIN_DN_TO_REPLACE"
+opendistro_security.restapi.roles_enabled: ["all_access", "security_rest_api_access"]

@@ -11,51 +11,71 @@
 # ==================================================================
 # Create environment and self-signed certificates
 mkdir -p lamassu
-mkdir lamassu/ocsp_certs
-mkdir lamassu/mosquitto_ca
-services=(consul-server vault keycloak enrollerscep enroller ca enrollerui manufacturingenroll manufacturing manufacturingui scep scepproxy scepextension device deviceui mosquitto prometheus jaeger elastic)
+
+openssl genrsa -out lamassu/lamassu.key 4096
+chmod 640 lamassu/lamassu.key
+openssl req -new -x509 -key lamassu/lamassu.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=$DOMAIN" -addext "subjectAltName = DNS:$DOMAIN, DNS:*.$DOMAIN" -out lamassu/lamassu.crt
+
+services=(ca consul-server device-manager elastic enroller jaeger keycloak ocsp prometheus ui vault)
 for s in "${services[@]}"; 
 do
     mkdir -p lamassu/"$s"_certs
-    openssl genrsa -out lamassu/"$s"_certs/"$s".key 4096
-    chmod 640 lamassu/"$s"_certs/"$s".key
-    openssl req -new -x509 -key lamassu/"$s"_certs/"$s".key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=$s" -addext "subjectAltName = DNS: $s" -out lamassu/"$s"_certs/"$s".crt
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/"$s".crt
+    cp lamassu/lamassu.key lamassu/"$s"_certs/"$s".key
 done
 
-# Distribute certificates to services
-trust_services=(consul-server vault keycloak)
-lamassu_services=(enrollerscep enroller ca manufacturingenroll manufacturing device scep scepproxy scepextension ocsp)
-for t_s in "${trust_services[@]}";
+ca_dependant_services=(device-manager enroller)
+for s in "${ca_dependant_services[@]}"; 
 do
-    for l_s in "${lamassu_services[@]}";
-    do
-        cp lamassu/"$t_s"_certs/"$t_s".crt lamassu/"$l_s"_certs/"$t_s".crt
-    done
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/ca.crt
 done
 
-# Create certificate for OCSP signed by Enroller
-openssl genrsa -out lamassu/ocsp_certs/ocsp.key 4096
-openssl req -new -key lamassu/ocsp_certs/ocsp.key -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/CN=ocsp" -out lamassu/ocsp_certs/ocsp.csr
-openssl x509 -req -in lamassu/ocsp_certs/ocsp.csr -CA lamassu/enroller_certs/enroller.crt -CAkey lamassu/enroller_certs/enroller.key -CAcreateserial -extfile compose-builder/openssl.conf -extensions ocsp -out lamassu/ocsp_certs/ocsp.crt
+consul_dependant_services=(vault ca device-manager enroller ocsp prometheus)
+for s in "${consul_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/consul-server.crt
+done
 
-# Distribute SCEP Proxy and Enroller certificates to Device Manufacturing System
-cp lamassu/scepproxy_certs/scepproxy.crt lamassu/manufacturing_certs/
-cp lamassu/enroller_certs/enroller.crt lamassu/manufacturing_certs/
-cp lamassu/enroller_certs/enroller.crt lamassu/manufacturingenroll_certs/
+elastic_dependant_services=(jaeger fluentd)
+for s in "${elastic_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/elastic.crt
+done
 
-# Distribute Consul certificate to Prometheus
-cp lamassu/consul-server_certs/consul-server.crt lamassu/prometheus_certs/
+enroller_dependant_services=(ca ocsp)
+for s in "${enroller_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/enroller.crt
+done
 
-# Distribute Jaeger certificate to Elasticsearch 
-cp lamassu/jaeger_certs/jaeger.crt lamassu/elastic_certs/
-cp lamassu/elastic_certs/elastic.crt lamassu/jaeger_certs/
+jaeger_dependant_services=(elastic)
+for s in "${jaeger_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/jaeger.crt
+done
 
-# Distribute Enroller certificates to SCEP Proxy and OCSP Responder
-cp lamassu/enroller_certs/enroller.crt lamassu/scepproxy_certs/
-cp lamassu/enroller_certs/enroller.crt lamassu/ocsp_certs/
+keycloak_dependant_services=(ca device-manager enroller ocsp elastic)
+for s in "${keycloak_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/keycloak.crt
+done
 
-# Distribute SCEP Proxy certificate to SCEP Extension
-cp lamassu/scepproxy_certs/scepproxy.crt lamassu/scepextension_certs/
+vault_dependant_services=(ca ocsp)
+for s in "${vault_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/vault.crt
+done
 
-# Distribute MQTT Gateway certificate to Device Virtual
-cp lamassu/mosquitto_certs/mosquitto.crt lamassu/device_certs/
+device_manager_dependant_services=(ca)
+for s in "${device_manager_dependant_services[@]}"; 
+do
+    mkdir -p lamassu/"$s"_certs
+    cp lamassu/lamassu.crt lamassu/"$s"_certs/device-manager.crt
+done

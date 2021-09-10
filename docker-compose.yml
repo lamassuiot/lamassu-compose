@@ -1,21 +1,43 @@
 version: '3'
 
-networks:
-  lamassu-net:
-
 volumes:
   consul_server_data:
   auth_pg_data:
   enroller_csr_store:
   enroller_pg_data:
-  scep_pg_data:
-  mosquitto_data:
   elastic_data:
   fluentd_data:
+  devices_pg_data:
 
 services:
+  ui:
+    build: 
+      context: https://github.com/lamassuiot/lamassu-ui.git#master
+    environment:
+      REACT_APP_AUTH_ENDPOINT: https://dev.lamassu.io:8443/auth
+      REACT_APP_AUTH_REALM: "lamassu"
+      REACT_APP_AUTH_CLIENT_ID: "frontend"
+      REACT_APP_CA_API: "https://dev.lamassu.io:8087"
+      REACT_APP_DEVICES_API: "https://dev.lamassu.io:8089"
+      REACT_APP_DMS_ENROLLER_API: "https://dev.lamassu.io:8085"
+      REACT_APP_CONSUL_API: "https://dev.lamassu.io:8501"
+      REACT_APP_DEFAULT_DMS_URL: "https://dev.lamassu.io:5000"
+    volumes: 
+      - './lamassu/ui_certs:/certs'
+    ports:
+      - 443:443
+    depends_on:
+      - fluentd
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+
   consul-server:
-    image: consul:latest
+    image: consul:1.9
     environment: 
       CONSUL_LOCAL_CONFIG: '${CONSUL_LOCAL_CONFIG}'
     volumes:
@@ -26,19 +48,19 @@ services:
       - ${CONSUL_HTTPS_PORT}:${CONSUL_HTTPS_PORT}
       - ${CONSUL_UDP_PORT}:${CONSUL_UDP_PORT}/udp
     command: consul agent -server -ui -client=0.0.0.0 -bootstrap-expect=1 -data-dir /consul/data -config-dir /consul/config
-    networks:
-      - lamassu-net
+    
     depends_on:
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
 
   vault:
-    image: vault:latest
+    image: vault:1.7.3
     environment:
       VAULT_LOCAL_CONFIG: '${VAULT_LOCAL_CONFIG}'
       VAULT_API_ADDR: '${VAULT_API_ADDR}'
@@ -52,18 +74,20 @@ services:
     depends_on: 
       - consul-server
       - fluentd
-    networks:
-      - lamassu-net
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
+    
+    links:
+      - "consul-server:consul.dev.lamassu.io"
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+
   keycloak:
     build:
-      context: https://github.com/lamassuiot/lamassu-auth.git#main
+      context: https://github.com/lamassuiot/lamassu-auth.git#develop
     environment:
       DB_VENDOR: '${KEYCLOAK_DB_VENDOR}'
       DB_ADDR: '${KEYCLOAK_DB_ADDR}'
@@ -79,20 +103,16 @@ services:
     ports:
       - ${KEYCLOAK_PORT}:${KEYCLOAK_PORT}
       - ${KEYCLOAK_HTTPS_PORT}:${KEYCLOAK_HTTPS_PORT}
-    depends_on:
-      - keycloakdb
-      - fluentd
-    networks:
-      - lamassu-net
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    depends_on    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'  
   
   keycloakdb:
-    image: 'postgres:latest'
+    image: 'postgres:13'
     environment:
       POSTGRES_DB: '${KEYCLOAK_DB_DATABASE}'
       POSTGRES_USER: '${KEYCLOAK_DB_USER}'
@@ -112,7 +132,7 @@ services:
 
   enrollerscep:
     build: 
-      context: https://github.com/lamassuiot/enroller.git#main
+      context: https://github.com/lamassuiot/enrolle
       dockerfile: Dockerfile.scep
     environment:
       SCEP_PORT: '${ENROLLERSCEP_PORT}'
@@ -145,25 +165,21 @@ services:
     ports:
       - ${ENROLLERSCEP_PORT}:${ENROLLERSCEP_PORT}
     restart: on-failure
-    depends_on:
-      - scepdb
-      - consul-server
-      - vault
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+
   enroller:
     build:
-      context: https://github.com/lamassuiot/enroller.git#main
-      dockerfile: Dockerfile.enroller
+     context: https://github.com/lamassuiot/enroller.git#develop
+     dockerfile: Dockerfile.enroller
     environment:
       ENROLLER_PORT: '${ENROLLER_PORT}'
       ENROLLER_HOMEPATH: '${ENROLLER_HOMEPATH}'
+
       ENROLLER_POSTGRESDB: '${ENROLLER_POSTGRESDB}'
       ENROLLER_POSTGRESUSER: '${ENROLLER_POSTGRESUSER}'
       ENROLLER_POSTGRESPASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
@@ -174,9 +190,11 @@ services:
       ENROLLER_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
       ENROLLER_KEYCLOAKCA: '${ENROLLER_KEYCLOAKCA}'
-      ENROLLER_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
-      ENROLLER_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
-      ENROLLER_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
+
+      #ENROLLER_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
+      #ENROLLER_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
+      #ENROLLER_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
+
       ENROLLER_CACERTFILE: '${ENROLLER_CACERTFILE}'
       ENROLLER_CAKEYFILE: '${ENROLLER_CAKEYFILE}'
       ENROLLER_CERTFILE: '${ENROLLER_CERTFILE}'
@@ -186,33 +204,65 @@ services:
       ENROLLER_CONSULHOST: '${CONSUL_HOST}'
       ENROLLER_CONSULPORT: '${CONSUL_HTTPS_PORT}'
       ENROLLER_CONSULCA: '${ENROLLER_CONSULCA}'
+      EST_SERVER: '${ENROLLER_EST_SERVER}'
+      EST_APS: '${ENROLLER_EST_APS}'
+      EST_EXPLICITANCHORPATH: '${ENROLLER_CA_ANCHOR_CERTFILE}'
+      EST_CERTIFICATESPATH: '${ENROLLER_CERTFILE}'
+      EST_PRIVATEKEYPATH: '${ENROLLER_KEYFILE}'
       JAEGER_SERVICE_NAME: '${ENROLLER_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
       - 'enroller_csr_store:${ENROLLER_HOMEPATH}'
       - './lamassu/enroller_certs:/certs'
+    ports:
+      - ${ENROLLER_PORT}:${ENROLLER_PORT}
     depends_on:
       - enrollerdb
       - consul-server
       - fluentd
-    networks:
-      - lamassu-net
-    ports:
-      - ${ENROLLER_PORT}:${ENROLLER_PORT}
+    
+    links:
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "ca:ca.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+          
+  enrollerdb:
+    build:
+     context: https://github.com/lamassuiot/enroller.git#develop
+     dockerfile: Dockerfile.enrollerdb
+    environment:
+      POSTGRES_DB: '${ENROLLER_POSTGRESDB}'
+      POSTGRES_USER: '${ENROLLER_POSTGRESUSER}'
+      POSTGRES_PASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
+    volumes:
+      - 'enroller_pg_data:/var/lib/postgresql/data'
+    ports:
+      - 5432:5432
+    
+    depends_on:
+      - fluentd
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
   ca:
     build:
-      context: https://github.com/lamassuiot/lamassu-ca.git#main
+       context: https://github.com/lamassuiot/lamassu-ca.git#develop
     environment:
       CA_PORT: '${CA_PORT}'
+      CA_OCSPURL: '${CA_OCSPURL}'
       CA_VAULTADDRESS: '${VAULT_API_ADDR}'
       CA_VAULTROLEID: '${CA_VAULTROLEID}'
       CA_VAULTSECRETID: '${CA_VAULTSECRETID}'
@@ -224,9 +274,9 @@ services:
       CA_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
       CA_KEYCLOAKCA: '${CA_KEYCLOAKCA}'
       CA_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
-      CA_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
-      CA_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
-      CA_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
+      # CA_ENROLLERUIPROTOCOL: '${ENROLLER_UIPROTOCOL}'
+      # CA_ENROLLERUIHOST: '${ENROLLER_UIHOST}'
+      # CA_ENROLLERUIPORT: '${ENROLLER_UIPORT}'
       CA_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
       CA_CONSULHOST: '${CONSUL_HOST}'
       CA_CONSULPORT: '${CONSUL_HTTPS_PORT}'
@@ -234,436 +284,143 @@ services:
       JAEGER_SERVICE_NAME: '${CA_JAEGER_SERVICE_NAME}'
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
+      EST_LISTENADDR: '${CA_EST_SERVER_LISTEN_IP}:${CA_EST_SERVER_PORT}'
+      EST_CERTS: '${CA_CERTFILE}'
+      EST_PRIVATEKEY: '${CA_KEYFILE}'
+      EST_CLIENTCAPATH: '${CA_EST_CLIENTCAPATH}'
+
+      EST_SERVER: '${CA_EST_SERVER}'
+      EST_EXPLICITANCHORPATH: '${CA_CERTFILE}'
+      EST_CERTIFICATESPATH: '${CA_CERTFILE}'
+      EST_PRIVATEKEYPATH: '${CA_KEYFILE}'
     volumes:
       - './lamassu/ca_certs:/certs'
-    networks:
-      - lamassu-net
+    
+    links:
+      - "vault:vault.dev.lamassu.io"
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     ports:
       - ${CA_PORT}:${CA_PORT}
+      - ${CA_EST_SERVER_PORT}:${CA_EST_SERVER_PORT}
     restart: on-failure
     depends_on:
       - consul-server
       - vault
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    # logging:
+    #  driver: fluentd 
+    #  options:
+    #    fluentd-address: localhost:${FLUENTD_PORT}
+    #    fluentd-async-connect: 'true'
+    #    tag: '{{.Name}}'
 
-  enrollerui:
+  device-manager:
     build:
-      context: https://github.com/lamassuiot/enroller-ui.git#main
-    volumes:
-      - './lamassu/enrollerui_certs:/etc/nginx/certs/server'
-    networks:
-      - lamassu-net
-    ports:
-      - ${ENROLLER_UIPORT}:443
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  enrollerdb:
-    build:
-      context: https://github.com/lamassuiot/enroller.git#main
-      dockerfile: Dockerfile.enrollerdb
+      context: https://github.com/lamassuiot/lamassu-device-manager.git#main
+      dockerfile: Dockerfile.devices
     environment:
-      POSTGRES_DB: '${ENROLLER_POSTGRESDB}'
-      POSTGRES_USER: '${ENROLLER_POSTGRESUSER}'
-      POSTGRES_PASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
-    volumes:
-      - 'enroller_pg_data:/var/lib/postgresql/data'
-    networks:
-      - lamassu-net
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+      DEVICES_PORT: '${DEVICES_PORT}'
+      DEVICES_CERTFILE: '${DEVICES_CERTFILE}'
+      DEVICES_KEYFILE: '${DEVICES_KEYFILE}'
 
-  manufacturingenroll:
-    build:
-      context: https://github.com/lamassuiot/device-manufacturing-system.git#main
-      dockerfile: Dockerfile.manufacturingenroll
-    environment:
-      ENROLLER_PORT: '${MANUFACTURINGENROLL_PORT}'
-      ENROLLER_UIHOST: '${MANUFACTURING_UIHOST}'
-      ENROLLER_UIPORT: '${MANUFACTURING_UIPORT}'
-      ENROLLER_UIPROTOCOL: '${MANUFACTURING_UIPROTOCOL}'
-      ENROLLER_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
-      ENROLLER_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
-      ENROLLER_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
-      ENROLLER_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
-      ENROLLER_KEYCLOAKCA: '${MANUFACTURINGENROLL_KEYCLOAKCA}'
-      ENROLLER_CERTFILE: '${MANUFACTURINGENROLL_CERTFILE}'
-      ENROLLER_KEYFILE: '${MANUFACTURINGENROLL_KEYFILE}'
-      ENROLLER_PROXYADDRESS: '${MANUFACTURINGENROLL_PROXYADDRESS}'
-      ENROLLER_PROXYCA: '${MANUFACTURINGENROLL_PROXYCA}'
-      ENROLLER_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      ENROLLER_CONSULHOST: '${CONSUL_HOST}'
-      ENROLLER_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      ENROLLER_CONSULCA: '${MANUFACTURINGENROLL_CONSULCA}'
-      JAEGER_SERVICE_NAME: '${MANUFACTURINGENROLL_JAEGER_SERVICE_NAME}'
+      DEVICES_POSTGRESDB: '${DEVICES_POSTGRESDB}'
+      DEVICES_POSTGRESUSER: '${DEVICES_POSTGRESUSER}'
+      DEVICES_POSTGRESPASSWORD: '${DEVICES_POSTGRESPASSWORD}'
+      DEVICES_POSTGRESHOSTNAME: '${DEVICES_POSTGRESHOST}'
+      DEVICES_POSTGRESPORT: '${DEVICES_POSTGRESPORT}'
+
+      DEVICES_KEYCLOAKPROTOCOL: '${DEVICES_KEYCLOAKPROTOCOL}'
+      DEVICES_KEYCLOAKHOSTNAME: '${DEVICES_KEYCLOAKHOSTNAME}'
+      DEVICES_KEYCLOAKPORT: '${DEVICES_KEYCLOAKPORT}'
+      DEVICES_KEYCLOAKCA: '${DEVICES_KEYCLOAKCA}'
+      DEVICES_KEYCLOAKREALM: '${DEVICES_KEYCLOAKREALM}'
+      DEVICES_KEYCLOAKCLIENTID: '${DEVICES_KEYCLOAKCLIENTID}'
+      DEVICES_KEYCLOAKCLIENTSECRET: '${DEVICES_KEYCLOAKCLIENTSECRET}'
+
+      DEVICES_MINIMUMREENROLLDAYS: '${DEVICES_MINIMUMREENROLLDAYS}'
+
+      DEVICES_CONSULPROTOCOL: '${DEVICES_CONSULPROTOCOL}'
+      DEVICES_CONSULHOST: '${CONSUL_HOST}'
+      DEVICES_CONSULPORT: '${CONSUL_HTTPS_PORT}'
+      DEVICES_CONSULCA: '${DEVICES_CONSULCA}'
+
+      DEVICES_CACERTFILE: '${DEVICES_CACERTFILE}'
+      DEVICES_CASERVERADDR: '${DEVICES_CASERVERADDR}'
+
+      JAEGER_SERVICE_NAME: '${DEVICES_JAEGER_SERVICE_NAME}'
+
       JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/manufacturingenroll_certs:/certs'
-    ports:
-      - ${MANUFACTURINGENROLL_PORT}:${MANUFACTURINGENROLL_PORT}
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on:
-      - enrollerdb
-      - consul-server
-      - enroller
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+      
+      #EST SERVER CONFIG
+      EST_CLIENTCAPATH: "${DEVICES_EST_CLIENTCAPATH}"
+      EST_LISTENADDR: '${DEVICES_EST_SERVER_LISTEN_IP}:${DEVICES_EST_SERVER_PORT}'
+      EST_CERTS: '${DEVICES_CERTFILE}'
+      EST_PRIVATEKEY: '${DEVICES_KEYFILE}'
 
-  manufacturing:
-    build:
-      context: https://github.com/lamassuiot/device-manufacturing-system.git#main
-      dockerfile: Dockerfile.manufacturing
-    environment:
-      MANUFACTURING_PORT: '${MANUFACTURING_PORT}'
-      MANUFACTURING_UIHOST: '${MANUFACTURING_UIHOST}'
-      MANUFACTURING_UIPORT: '${MANUFACTURING_UIPORT}'
-      MANUFACTURING_UIPROTOCOL: '${MANUFACTURING_UIPROTOCOL}'
-      MANUFACTURING_KEYCLOAKHOSTNAME: '${KEYCLOAK_HOSTNAME}'
-      MANUFACTURING_KEYCLOAKPORT: '${KEYCLOAK_HTTPS_PORT}'
-      MANUFACTURING_KEYCLOAKPROTOCOL: '${KEYCLOAK_PROTOCOL}'
-      MANUFACTURING_KEYCLOAKREALM: '${KEYCLOAK_REALM}'
-      MANUFACTURING_KEYCLOAKCA: '${MANUFACTURING_KEYCLOAKCA}'
-      MANUFACTURING_CERTFILE: '${MANUFACTURING_CERTFILE}'
-      MANUFACTURING_KEYFILE: '${MANUFACTURING_KEYFILE}'
-      MANUFACTURING_AUTHKEYFILE: '${MANUFACTURING_AUTHKEYFILE}'
-      MANUFACTURING_PROXYADDRESS: '${MANUFACTURING_PROXYADDRESS}'
-      MANUFACTURING_PROXYCA: '${MANUFACTURING_PROXYCA}'
-      MANUFACTURING_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      MANUFACTURING_CONSULHOST: '${CONSUL_HOST}'
-      MANUFACTURING_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      MANUFACTURING_CONSULCA: '${MANUFACTURING_CONSULCA}'
-      JAEGER_SERVICE_NAME: '${MANUFACTURING_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
+      #EST CLIENT CONFIG
+      EST_SERVER: '${DEVICES_EST_SERVER}'
+      EST_EXPLICITANCHORPATH: '${DEVICES_EST_EXPLICITANCHORPATH}'
+      EST_CERTIFICATESPATH: '${DEVICES_EST_CERTIFICATESPATH}'
+      EST_PRIVATEKEYPATH: '${DEVICES_KEYFILE}'
+
     volumes:
-      - './lamassu/manufacturing_certs:/certs'
+      - './lamassu/device-manager_certs:/certs'
     ports:
-      - ${MANUFACTURING_PORT}:${MANUFACTURING_PORT}
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on: 
-      - consul-server
-      - scepextension
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  manufacturingui:
-    build:
-      context: https://github.com/lamassuiot/device-manufacturing-system-ui.git#main
-    volumes:
-      - './lamassu/manufacturingui_certs:/etc/nginx/certs/server'
-    ports:
-      - ${MANUFACTURING_UIPORT}:443
-    networks:
-      - lamassu-net
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  scepextension:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-      dockerfile: Dockerfile.extension
-    environment:
-      SCEPEXTENSION_PORT: '${SCEPEXTENSION_PORT}'
-      SCEPEXTENSION_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      SCEPEXTENSION_CONSULHOST: '${CONSUL_HOST}'
-      SCEPEXTENSION_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      SCEPEXTENSION_CONSULCA: '${SCEPEXTENSION_CONSULCA}'
-      SCEPEXTENSION_CERTFILE: '${SCEPEXTENSION_CERTFILE}'
-      SCEPEXTENSION_KEYFILE: '${SCEPEXTENSION_KEYFILE}'
-      SCEPEXTENSION_SERVERPORT: '${SCEPEXTENSION_SERVERPORT}'
-      SCEPEXTENSION_SCEPMAPPING: '${SCEPEXTENSION_SCEPMAPPING}'
-      SCEPEXTENSION_PROXYCA: '${SCEPEXTENSION_PROXYCA}'
-      SCEPEXTENSION_PROXYHOST: '${SCEPEXTENSION_PROXYHOST}'
-      SCEPEXTENSION_PROXYPORT: '${SCEPEXTENSION_PROXYPORT}'
-      JAEGER_SERVICE_NAME: '${SCEPEXTENSION_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/scepextension_certs:/certs'
-    ports:
-      - ${SCEPEXTENSION_PORT}:${SCEPEXTENSION_PORT}
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on: 
-      - consul-server
-      - fluentd
-      - scepca1
-      - scepca2
-      - scepca3
-      - scepca4
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  scepproxy:
-    build:
-      context: https://github.com/lamassuiot/scep.git#:proxy
-    volumes:
-      - './lamassu/scepproxy_certs:/etc/nginx/certs/'
-    networks:
-      - lamassu-net
-    depends_on:
-      - fluentd
-      - scepextension
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+      - ${DEVICES_PORT}:${DEVICES_PORT}
+      - ${DEVICES_EST_SERVER_PORT}:${DEVICES_EST_SERVER_PORT}
     
-  scepca4:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-    environment:
-      SCEP_HTTP_LISTEN_PORT: '${SCEP_HTTP_LISTEN_PORT}'
-      SCEP_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-      SCEP_VAULT_CA: '${SCEP_VAULT_CA4}'
-      SCEP_VAULT_CA_CERT: '${SCEP_VAULT_CA_CERT}'
-      SCEP_ROLE_ID: '${SCEP_CA4_ROLE_ID}'
-      SCEP_SECRET_ID: '${SCEP_CA4_SECRET_ID}'
-      SCEP_FILE_DEPOT: '${SCEP_FILE_DEPOT}'
-      SCEP_DB_NAME: '${SCEP_POSTGRESDB}'
-      SCEP_DB_USER: '${SCEP_POSTGRESUSER}'
-      SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
-      SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
-      SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      SCEP_CONSULHOST: '${CONSUL_HOST}'
-      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      SCEP_CONSULCA: '${SCEP_CONSULCA}'
-      SCEP_HOST: '${SCEP_CA4_HOST}'
-      SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
-      JAEGER_SERVICE_NAME: '${SCEP_CA4_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
-      - './lamassu/scep_certs/scep.key:/ca/ca.key'
-      - './lamassu/scep_certs:/certs'
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on: 
-      - scepdb
-      - consul-server
-      - vault
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  scepca3:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-    environment:
-      SCEP_HTTP_LISTEN_PORT: '${SCEP_HTTP_LISTEN_PORT}'
-      SCEP_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-      SCEP_VAULT_CA: '${SCEP_VAULT_CA3}'
-      SCEP_VAULT_CA_CERT: '${SCEP_VAULT_CA_CERT}'
-      SCEP_ROLE_ID: '${SCEP_CA3_ROLE_ID}'
-      SCEP_SECRET_ID: '${SCEP_CA3_SECRET_ID}'
-      SCEP_FILE_DEPOT: '${SCEP_FILE_DEPOT}'
-      SCEP_DB_NAME: '${SCEP_POSTGRESDB}'
-      SCEP_DB_USER: '${SCEP_POSTGRESUSER}'
-      SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
-      SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
-      SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      SCEP_CONSULHOST: '${CONSUL_HOST}'
-      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      SCEP_CONSULCA: '${SCEP_CONSULCA}'
-      SCEP_HOST: '${SCEP_CA3_HOST}'
-      SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
-      JAEGER_SERVICE_NAME: '${SCEP_CA3_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
-      - './lamassu/scep_certs/scep.key:/ca/ca.key'
-      - './lamassu/scep_certs:/certs'
-    networks:
-      - lamassu-net
+    links:
+      - "keycloak:keycloak.dev.lamassu.io"
+      - "ca:ca.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
     depends_on:
-      - scepdb
-      - consul-server
-      - vault
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+
+  device-manager-db:
+    build:
+      context: https://github.com/lamassuiot/lamassu-device-manager.git#main
+      dockerfile: Dockerfile.devicesdb
+    environment:
+      POSTGRES_DB: '${DEVICES_POSTGRESDB}'
+      POSTGRES_USER: '${DEVICES_POSTGRESUSER}'
+      POSTGRES_PASSWORD: '${DEVICES_POSTGRESPASSWORD}'
+    volumes:
+      - 'devices_pg_data:/var/lib/postgresql/data'
+    ports:
+      - 5433:5432
     
-  scepca2:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-    environment:
-      SCEP_HTTP_LISTEN_PORT: '${SCEP_HTTP_LISTEN_PORT}'
-      SCEP_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-      SCEP_VAULT_CA: '${SCEP_VAULT_CA2}'
-      SCEP_VAULT_CA_CERT: '${SCEP_VAULT_CA_CERT}'
-      SCEP_ROLE_ID: '${SCEP_CA2_ROLE_ID}'
-      SCEP_SECRET_ID: '${SCEP_CA2_SECRET_ID}'
-      SCEP_FILE_DEPOT: '${SCEP_FILE_DEPOT}'
-      SCEP_DB_NAME: '${SCEP_POSTGRESDB}'
-      SCEP_DB_USER: '${SCEP_POSTGRESUSER}'
-      SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
-      SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
-      SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      SCEP_CONSULHOST: '${CONSUL_HOST}'
-      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      SCEP_CONSULCA: '${SCEP_CONSULCA}'
-      SCEP_HOST: '${SCEP_CA2_HOST}'
-      SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
-      JAEGER_SERVICE_NAME: '${SCEP_CA2_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
-      - './lamassu/scep_certs/scep.key:/ca/ca.key'
-      - './lamassu/scep_certs:/certs'
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on: 
-      - scepdb
-      - consul-server
-      - vault
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-
-  scepca1:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-    environment:
-      SCEP_HTTP_LISTEN_PORT: '${SCEP_HTTP_LISTEN_PORT}'
-      SCEP_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-      SCEP_VAULT_CA: '${SCEP_VAULT_CA1}'
-      SCEP_VAULT_CA_CERT: '${SCEP_VAULT_CA_CERT}'
-      SCEP_ROLE_ID: '${SCEP_CA1_ROLE_ID}'
-      SCEP_SECRET_ID: '${SCEP_CA1_SECRET_ID}'
-      SCEP_FILE_DEPOT: '${SCEP_FILE_DEPOT}'
-      SCEP_DB_NAME: '${SCEP_POSTGRESDB}'
-      SCEP_DB_USER: '${SCEP_POSTGRESUSER}'
-      SCEP_DB_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
-      SCEP_DB_HOST: '${SCEP_POSTGRESHOSTNAME}'
-      SCEP_DB_PORT: '${SCEP_POSTGRESPORT}'
-      SCEP_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      SCEP_CONSULHOST: '${CONSUL_HOST}'
-      SCEP_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      SCEP_CONSULCA: '${SCEP_CONSULCA}'
-      SCEP_HOST: '${SCEP_CA1_HOST}'
-      SCEP_LOG_JSON: '${SCEP_LOG_JSON}'
-      JAEGER_SERVICE_NAME: '${SCEP_CA1_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/scep_certs/scep.crt:/ca/ca.pem'
-      - './lamassu/scep_certs/scep.key:/ca/ca.key'
-      - './lamassu/scep_certs:/certs'
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on:
-      - scepdb
-      - consul-server
-      - vault
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-
-  scepdb:
-    build:
-      context: https://github.com/lamassuiot/scep.git
-      dockerfile: Dockerfile.scepdb
-    environment:
-      POSTGRES_DB: '${SCEP_POSTGRESDB}'
-      POSTGRES_USER: '${SCEP_POSTGRESUSER}'
-      POSTGRES_PASSWORD: '${SCEP_POSTGRESPASSWORD}'
-    volumes:
-      - 'scep_pg_data:/var/lib/postgresql/data'
-    networks:
-      - lamassu-net
     depends_on:
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
 
   ocsp:
     build:
-      context: https://github.com/lamassuiot/GOCSP-responder.git
+      context: https://github.com/lamassuiot/GOCSP-responder.git#develop
     environment:
-      RESPONDER_FILE_CA: '${RESPONDER_FILE_CA}'
       RESPONDER_KEY: '${RESPONDER_KEY}'
       RESPONDER_CERT: '${RESPONDER_CERT}'
-      RESPONDER_DB_NAME: '${ENROLLER_POSTGRESDB}'
-      RESPONDER_DB_USER: '${ENROLLER_POSTGRESUSER}'
-      RESPONDER_DB_PASSWORD: '${ENROLLER_POSTGRESPASSWORD}'
-      RESPONDER_DB_HOST: '${ENROLLER_POSTGRESHOSTNAME}'
-      RESPONDER_DB_PORT: '${ENROLLER_POSTGRESPORT}'
+      RESPONDER_VAULT_ROLEID: '${CA_VAULTROLEID}'
+      RESPONDER_VAULT_SECRETID: '${CA_VAULTSECRETID}'
+      RESPONDER_VAULT_CA: '${RESPONDER_VAULTCA}'
+      RESPONDER_VAULT_ADDRESS: '${VAULT_API_ADDR}'
       RESPONDER_PORT: '${RESPONDER_PORT}'
       RESPONDER_CONSUL_PROTOCOL: '${CONSUL_PROTOCOL}'
       RESPONDER_CONSUL_HOST: '${CONSUL_HOST}'
@@ -674,95 +431,25 @@ services:
       JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
     volumes:
       - './lamassu/ocsp_certs:/certs'
-    networks:
-      - lamassu-net
-    restart: on-failure
-    depends_on:
-      - scepdb
-      - consul-server
-      - fluentd
-      - scepproxy
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  device:
-    build:
-      context: https://github.com/lamassuiot/device-virtual.git#main
-    environment:
-      DEVICE_PORT: '${DEVICE_PORT}'
-      DEVICE_UIHOST: '${DEVICE_UIHOST}'
-      DEVICE_UIPORT: '${DEVICE_UIPORT}'
-      DEVICE_UIPROTOCOL: '${DEVICE_UIPROTOCOL}'
-      DEVICE_CAPATH: '${DEVICE_CAPATH}'
-      DEVICE_CERTFILE: '${DEVICE_CERTFILE}'
-      DEVICE_KEYFILE: '${DEVICE_KEYFILE}'
-      DEVICE_CONSULPROTOCOL: '${CONSUL_PROTOCOL}'
-      DEVICE_CONSULHOST: '${CONSUL_HOST}'
-      DEVICE_CONSULPORT: '${CONSUL_HTTPS_PORT}'
-      DEVICE_CONSULCA: '${DEVICE_CONSULCA}'
-      JAEGER_SERVICE_NAME: '${DEVICE_JAEGER_SERVICE_NAME}'
-      JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-      JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-    volumes:
-      - './lamassu/device_certs:/certs'
     ports:
-      - ${DEVICE_PORT}:${DEVICE_PORT}
-    networks:
-      - lamassu-net
+      - 9098:9098
+    links:
+      - "vault:vault.dev.lamassu.io"
+      - "consul-server:consul.dev.lamassu.io"
+      - "jaeger:jaeger.dev.lamassu.io"
     restart: on-failure
     depends_on:
       - consul-server
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-    
-  deviceui:
-    build:
-      context: https://github.com/lamassuiot/device-virtual-ui.git#main
-    volumes:
-      - './lamassu/deviceui_certs:/etc/nginx/certs/server'
-    ports:
-      - ${DEVICE_UIPORT}:443
-    networks:
-      - lamassu-net
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-  
-  mosquitto:
-    build:
-      context: https://github.com/lamassuiot/lamassu-mqtt-gateway.git#main
-    volumes:
-      - './lamassu/mosquitto_certs:/mosquitto/certs'
-      - './lamassu/mosquitto_ca:/mosquitto/ca'
-      - 'mosquitto_data:/mosquitto/data'
-    ports:
-      - ${MOSQUITTO_PORT}:${MOSQUITTO_PORT}
-      - ${MOSQUITTOUI_PORT}:${MOSQUITTOUI_PORT}
-    networks:
-      - lamassu-net
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
-    
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
+
+
   prometheus:
     build:
       context: https://github.com/lamassuiot/lamassu-monitoring.git#main
@@ -770,24 +457,26 @@ services:
       - ${PROMETHEUS_PORT}:${PROMETHEUS_PORT}
     volumes:
       - './lamassu/prometheus_certs/consul-server.crt:/etc/prometheus/certs/consul-server.crt'
-    networks:
-      lamassu-net:
+    
+    links:
+      - "consul-server:consul.dev.lamassu.io"
     depends_on:
       - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    restart: on-failure
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
     
   jaeger:
     image: jaegertracing/all-in-one:latest
     environment:
       SPAN_STORAGE_TYPE: '${SPAN_STORAGE_TYPE}'
-      ES_USERNAME: '${ELASTIC_USERNAME}'
-      ES_PASSWORD: '${ELASTIC_PASSWORD}'
-      ES_SERVER_URLS: '${ES_SERVER_URLS}'
+      ES_USERNAME: 'jaeger'
+      ES_PASSWORD: 'admin'
+      ES_SERVER_URLS: 'https://elastic.dev.lamassu.io:9200'
       ES_TLS_ENABLED: 'true'
       ES_TLS_CA: '${ES_TLS_CA}'
       ES_TLS_CERT: '${ES_TLS_CERT}'
@@ -804,51 +493,79 @@ services:
       - 14268:14268
       - 14250:14250
       - 9411:9411
-    networks:
-      lamassu-net:
+    links:
+      - "elastic:elastic.dev.lamassu.io"
     depends_on: 
       - elastic
       - fluentd
     restart: on-failure
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     fluentd-address: localhost:${FLUENTD_PORT}
+    #     fluentd-async-connect: 'true'
+    #     tag: '{{.Name}}'
 
   elastic:
     build:
-      context: https://github.com/lamassuiot/lamassu-tracing.git#main
+      context: ./
+      dockerfile: Dockerfile.elastic
     environment:
       node.name: 'elastic'
       discovery.type: 'single-node'
-      ELASTIC_CERTS_DIR: '/usr/share/elasticsearch/config'
-      ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
+      network.host: "0.0.0.0"
     volumes:
       - 'elastic_data:/usr/share/elasticsearch/data'
       - './lamassu/elastic_certs/elastic.crt:/usr/share/elasticsearch/config/elastic.crt'
-      - './lamassu/elastic_certs/elastic.key:/usr/share/elasticsearch/config/elastic.key'
+      - './lamassu/elastic_certs/elastic-pkcs8.key:/usr/share/elasticsearch/config/elastic-pkcs8.key'
+      - './lamassu/elastic_certs/keycloak.crt:/usr/share/elasticsearch/config/keycloak.crt'
+      - './elastic/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml'
+      - './elastic/elastic-logs.properties:/usr/share/elasticsearch/config/log4j2.properties'
+      - './elastic/elastic-security-config.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/config.yml'
+      - './elastic/elastic-internal-users.yml:/usr/share/elasticsearch/plugins/opendistro_security/securityconfig/internal_users.yml'
     ports:
       - 9200:9200
       - 9300:9300
-    networks:
-      lamassu-net:
-    depends_on:
-      - fluentd
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: localhost:${FLUENTD_PORT}
-        fluentd-async-connect: 'true'
-        tag: '{{.Name}}'
+    links:
+      - "keycloak:dev.lamassu.io"
+
+  kibana:
+    image: amazon/opendistro-for-elasticsearch-kibana:1.13.2
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    volumes:
+      - './lamassu/elastic_certs/elastic.crt:/usr/share/kibana/config/keycloak.crt'
+      - './lamassu/elastic_certs/elastic.crt:/usr/share/kibana/config/kibana.crt'
+      - './lamassu/elastic_certs/elastic.key:/usr/share/kibana/config/kibana.key'
+      - './kibana.yml:/usr/share/kibana/config/kibana.yml'
+    links:
+      - "elastic:elastic.dev.lamassu.io"
+      - "keycloak:dev.lamassu.io"
+
+  # rabbitmq:
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile.rabbitmq
+  #   ports:
+  #     - '5672:5672'
+  #     - '15672:15672'
+  #     - '15674:15674'
     
   fluentd:
-    image: fluent/fluentd:latest
+    user: root
+    build:
+      context: ./
+      dockerfile: Dockerfile.fluentd
     ports:
       - ${FLUENTD_PORT}:${FLUENTD_PORT}
       - ${FLUENTD_PORT}:${FLUENTD_PORT}/udp
     volumes:
       - 'fluentd_data:/fluentd/log'
-    networks:
-      - lamassu-net
+      - './fluentd.conf:/fluentd/etc/fluent.conf'
+      - './lamassu/fluentd_certs:/certs'
+    links:
+      - "elastic:elastic.dev.lamassu.io"
+    depends_on:
+      - elastic

@@ -103,7 +103,9 @@ services:
     ports:
       - ${KEYCLOAK_PORT}:${KEYCLOAK_PORT}
       - ${KEYCLOAK_HTTPS_PORT}:${KEYCLOAK_HTTPS_PORT}
-    depends_on    restart: on-failure
+    restart: on-failure
+    depends_on:
+      - keycloakdb
     # logging:
     #   driver: fluentd
     #   options:

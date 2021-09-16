@@ -1,0 +1,4 @@
+FROM amazon/opendistro-for-elasticsearch:1.13.2
+
+RUN chmod +x /usr/share/elasticsearch/plugins/opendistro_security/tools/securityadmin.sh
+RUN chmod +x /usr/share/elasticsearch/plugins/opendistro_security/tools/hash.sh

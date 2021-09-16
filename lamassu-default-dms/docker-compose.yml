@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  dms-example:
+    build:
+        context: .
+    environment:
+      PORT: 5000
+    volumes:
+        - ./index.js:/app/index.js
+        - ./devices-crypto-material:/app/devices-crypto-material
+        - ./device-manager.crt:/app/device-manager-anchor.crt
+        - ./enrolled-dms.crt:/app/enrolled-dms.crt
+        - ./enrolled-dms.key:/app/enrolled-dms.key
+        - ./https.crt:/app/https.crt
+        - ./https.key:/app/https.key
+    network_mode: "host"
+    restart: on-failure
+    entrypoint: "node /app/index.js"

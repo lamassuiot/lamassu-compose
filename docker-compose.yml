@@ -12,7 +12,7 @@ volumes:
 services:
   ui:
     build: 
-      context: https://github.com/lamassuiot/lamassu-ui.git#master
+      context: https://github.com/lamassuiot/lamassu-ui.git#main
     environment:
       REACT_APP_AUTH_ENDPOINT: https://dev.lamassu.io:8443/auth
       REACT_APP_AUTH_REALM: "lamassu"

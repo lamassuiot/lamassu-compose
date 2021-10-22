@@ -59,7 +59,7 @@ ELASTIC_KIBANA_PASSWORD=<ELASTIC_KIBANA_PASSWORD> //Kibana-Elasticsearch passwor
 
 ```
 
-4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `compose-builder/gen-self-signed-certs.sh` script. First provide the next environment variables used by the script:
+4. All the services in Lamassu are secured with TLS. For testing and development purposes self signed certificates can be used. These certificates can be automatically created running the `gen-self-signed-certs.sh` script. In order to do so, first provide the next environment variables used by the script:
 ```
 export C=ES
 export ST=Guipuzcoa

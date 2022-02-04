@@ -58,9 +58,9 @@ export DOMAIN=dev.lamassu.io
     The different APIs exposed through the gateway have been configured to ONLY accept request originates inside the platform via a mTLS authentication:
 
     ```
-    ┌───────────────────┐                            ┌───────────────────┐                          ┌───────────────────┐
-    │   Client/Browser  │ -------<downstream>------- │      Gateway      │ -------<upstream>------- │        API        │
-    └───────────────────┘            TLS             └───────────────────┘           mTLS           └───────────────────┘
+    ┌────────────────┐                    ┌───────────┐                  ┌─────────┐
+    │ Client/Browser │ ---<downstream>--- │  Gateway  │ ---<upstream>--- │   API   │
+    └────────────────┘         TLS        └───────────┘       mTLS       └─────────┘
     ```
 
     1. Generate the upstream certificates. 

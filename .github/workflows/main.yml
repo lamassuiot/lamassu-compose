@@ -28,66 +28,31 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build the Docker image
+      - name: Build lamassu-gateway Docker image
         uses: docker/build-push-action@v2
         with:
-          file: config/envoy/Dockerfile
+          context: config/envoy
           push: true
           tags: lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_tag }}
 
-  build_lamassu_db_release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Automatic Tag (Bump version and push tag)
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches : "master,main,develop"
-      
-      - name: Login to DockerHub
-        uses: docker/login-action@v1 
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build the Docker image
+      - name: Build lamassu-db Docker image
         uses: docker/build-push-action@v2
         with:
-          file: config/postgres/Dockerfile
+          context: config/postgres
           push: true
           tags: lamassuiot/lamassu-db:${{ steps.tag_version.outputs.new_tag }}
-          
-  build_rabbitmq_release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Automatic Tag (Bump version and push tag)
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_branches : "master,main,develop"
       
-      - name: Login to DockerHub
-        uses: docker/login-action@v1 
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build the Docker image
+      - name: Build lamassu-auth Docker image
         uses: docker/build-push-action@v2
         with:
-          file: config/rabbitmq/Dockerfile
+          context: config/auth
+          push: true
+          tags: lamassuiot/lamassu-auth:${{ steps.tag_version.outputs.new_tag }}
+      
+      - name: Build lamassu-rabbitmq Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: config/rabbitmq
           push: true
           tags: lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_tag }}
-          

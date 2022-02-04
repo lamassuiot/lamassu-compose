@@ -69,9 +69,9 @@ export DOMAIN=dev.lamassu.io
             ```
             ├── upstream
             │   └── ...
-            ├── downstream
-            │   ├── tls.crt
-            │   └── tls.key
+            └── downstream
+                ├── tls.crt
+                └── tls.key
             ```
 
         - **Generate a Self Signed certificate**: If you need to create a new self-signed certificate, run the following command:
@@ -86,13 +86,13 @@ export DOMAIN=dev.lamassu.io
     sudo chmod -R 777  tls-certificates/downstream/
     ```
 
-7. In order tu run Lamassus's docker-compose, some adjustments are required. The Gateway will has been configured to route traffic based on the hostname/domain used. Provided a `DOMAIN` to be used as the base domain i.e. dev.lamassu.io: 
+6. In order tu run Lamassus's docker-compose, some adjustments are required. The Gateway will has been configured to route traffic based on the hostname/domain used. Provided a `DOMAIN` to be used as the base domain i.e. dev.lamassu.io: 
 
 ```
 sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
     
-7. Configure Keycloak:
+7. Keycloak Configuration:
     1. Run Keycloak: 
     ```
     docker-compose up -d auth
@@ -120,7 +120,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
         "result" => undefined
     }
     ```
-9. Provision and configure Vault secret engine:
+8. Provision and configure Vault secret engine:
     1. Run Vault: 
     ```
     docker-compose up -d vault consul api-gateway
@@ -197,14 +197,14 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
     sed -i 's/SECRET_ID_TO_BE_REPLACED/'$CA_VAULTSECRETID'/g' .env
     ```
     
-9. The Device Manage has a configurable variable that deteremines when a device can renew (also known as reenroll) its certificate. By default the reenrollment process can only be done 30 days prior to the cert's expiratio time. This value can be changed by modifying the `DEVICES_MINIMUMREENROLLDAYS` variable located in the `.env` file
+10. The Device Manage has a configurable variable that deteremines when a device can renew (also known as reenroll) its certificate. By default the reenrollment process can only be done 30 days prior to the cert's expiratio time. This value can be changed by modifying the `DEVICES_MINIMUMREENROLLDAYS` variable located in the `.env` file
     
-10. Start the remaining services:
+11. Start the remaining services:
 ```
 docker-compose up -d
 ```
 
-11. Configure a new DMS Instance
+12. Configure a new DMS Instance
     1. First, authenticate against Keycloak:
     ```
     export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)

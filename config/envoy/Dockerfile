@@ -26,3 +26,5 @@ COPY config.yaml /tmpl/envoy.yaml.tmpl
 COPY docker-entrypoint.sh /
 
 RUN chmod 500 /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

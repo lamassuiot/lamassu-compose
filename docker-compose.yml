@@ -10,7 +10,7 @@ services:
     image: lamassuiot/lamassu-gateway:${LAMASSU_GATEWAY_DOCKER_TAG}
     container_name: api-gateway 
     environment:
-      DOMAIN: dev-lamassu.zpd.ikerlan.es
+      DOMAIN: ${DOMAIN}
       DEBUG_MODE: "false"
     ports:
       - 80:8080

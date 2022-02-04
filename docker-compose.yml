@@ -68,14 +68,7 @@ services:
     image: lamassuiot/lamassu-ui:${LAMASSU_UI_DOCKER_TAG}
     container_name: lamassu-ui
     environment:
-      REACT_APP_AUTH_ENDPOINT: https://dev.lamassu.io:8443/auth
-      REACT_APP_AUTH_REALM: "lamassu"
-      REACT_APP_AUTH_CLIENT_ID: "frontend"
-      REACT_APP_CA_API: "https://dev.lamassu.io:8087"
-      REACT_APP_DEVICES_API: "https://dev.lamassu.io:8089"
-      REACT_APP_DMS_ENROLLER_API: "https://dev.lamassu.io:8085"
-      REACT_APP_CONSUL_API: "https://dev.lamassu.io:8501"
-      REACT_APP_DEFAULT_DMS_URL: "https://dev.lamassu.io:5000"
+      DOMAIN: ${DOMAIN}
     volumes: 
       - ./tls-certificates/upstream/ui/tls.crt:/certs/ui.crt
       - ./tls-certificates/upstream/ui/tls.key:/certs/ui.key
@@ -202,7 +195,7 @@ services:
       POSTGRES_DB: devices
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      MINIMUM_REENROLL_DAYS: 30
+      MINIMUM_REENROLL_DAYS: ${DEVICE_MANAGER_MINIMUM_REENROLL_DAYS}
       CA_CERT_FILE:  /certs/internal-ca.crt
       CA_SERVER_ADDR: https://lamassu-ca:8087
       MUTUAL_TLS_ENABLED: "true"

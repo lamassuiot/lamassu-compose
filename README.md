@@ -27,8 +27,8 @@ To launch Lamassu follow the next steps:
 3. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**
 
 ```
-DB_USER=<KEYCLOAK_DB_USER> //Database user.
-DB_PASSWORD=<KEYCLOAK_DB_PASSWORD> //Database user password.
+DB_USER=<DB_USER> //Database user.
+DB_PASSWORD=<DB_PASSWORD> //Database user password.
 ```
 
 
@@ -95,22 +95,22 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 7. Configure Keycloak:
     1. Run Keycloak: 
     ```
-    docker-compose up -d keycloak
+    docker-compose up -d auth
     ```
     2. Keycloak image is configured with a Realm, a client and two different roles: admin and operator.
 
     3. Create a user with admin role to perform Enroller administrator tasks. (The command below creates a user named **enroller** with **enroller** as its password):
     ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
+    docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin
     ```
     4. Create a user with operator role to perform Device Manufacturing System tasks. This Device Manufacturing System must associate its CSR with this user matching the CN attribute and the username.(The command below creates a user named **operator** with **operator** as its password):
     ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator
+    docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator
     ```
 
     5. Reload keyclok server
     ```
-    docker-compose exec keycloak /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
+    docker-compose exec auth /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload
     ```
     
     If Keycloak display the following output, keycloak has successfully reloaded. Otherwise, run the command again until you see the expected output:
@@ -159,9 +159,9 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 
     4. Unseal Vault using the keys obtained with the previous command:
     ```
-    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
-    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
-    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[2])\" }"
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[0])\" }"
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[1])\" }"
+    curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[2])\" }"
     ```
     
     5. Vault must be provisioned with some resources (authentication methods, policies and secret engines). That can be achieved by running the `ca-provision.sh` script. 
@@ -189,9 +189,8 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 
     8. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
     ```
-    export CA_VAULTROLEID=$(curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/role-id | jq -r .data.role_id )
-
-    export CA_VAULTSECRETID=$(curl --cacert $VAULT_CA_FILE --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/Enroller-CA-role/secret-id | jq -r .data.secret_id)
+    export CA_VAULTROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )
+    export CA_VAULTSECRETID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id | jq -r .data.secret_id)
 
     # Set RoleID and SecretID in .env file
     sed -i 's/ROLE_ID_TO_BE_REPLACED/'$CA_VAULTROLEID'/g' .env

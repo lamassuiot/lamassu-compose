@@ -71,7 +71,7 @@ static_resources:
                   virtual_hosts:
                     - name: apis_ui
                       domains:
-                        - "dev-lamassu.zpd.ikerlan.es"
+                        - ${DOMAIN}
                       routes:
                         - match:
                             safe_regex:
@@ -118,7 +118,7 @@ static_resources:
 
                     - name: default-dms
                       domains:
-                        - "default-dms.dev-lamassu.zpd.ikerlan.es"
+                        - "default-dms.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -134,7 +134,7 @@ static_resources:
 
                     - name: vault
                       domains:
-                        - "vault.dev-lamassu.zpd.ikerlan.es"
+                        - "vault.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -150,7 +150,7 @@ static_resources:
 
                     - name: rabbitmq
                       domains:
-                        - "rabbitmq.dev-lamassu.zpd.ikerlan.es"
+                        - "rabbitmq.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -168,7 +168,7 @@ static_resources:
 
                     - name: rabbitmq-ui
                       domains:
-                        - "ui-rabbitmq.dev-lamassu.zpd.ikerlan.es"
+                        - "ui-rabbitmq.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -182,7 +182,7 @@ static_resources:
 
                     - name: consul
                       domains:
-                        - "consul.dev-lamassu.zpd.ikerlan.es"
+                        - "consul.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -199,7 +199,7 @@ static_resources:
 
                     - name: auth
                       domains:
-                        - "auth.dev-lamassu.zpd.ikerlan.es"
+                        - "auth.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -216,7 +216,7 @@ static_resources:
 
                     - name: jaeger-tracing
                       domains:
-                        - "tracing.dev-lamassu.zpd.ikerlan.es"
+                        - "tracing.${DOMAIN}"
                       routes:
                         - match:
                             prefix: "/"
@@ -264,14 +264,14 @@ static_resources:
                             prefix: "/"
                             headers: 
                               - name: ":authority"
-                                exact_match: "tracing.dev-lamassu.zpd.ikerlan.es"
+                                exact_match: "tracing.${DOMAIN}"
                         - match:
                             prefix: "/api/device-manager/.well-known/est"
                         - match:
                             prefix: "/api/"
                             headers: 
                               - name: ":authority"
-                                exact_match: "rabbitmq.dev-lamassu.zpd.ikerlan.es"
+                                exact_match: "rabbitmq.${DOMAIN}"
                           requires:
                             provider_name: "lamassu_oidc_provider"
                         - match:

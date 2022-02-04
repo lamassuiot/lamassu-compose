@@ -6,6 +6,24 @@ volumes:
   jaeger_tracing_data:
 
 services:
+  api-gateway:
+    image: lamassuiot/lamassu-gateway:${LAMASSU_GATEWAY_DOCKER_TAG}
+    container_name: api-gateway 
+    environment:
+      DOMAIN: dev-lamassu.zpd.ikerlan.es
+      DEBUG_MODE: "false"
+    ports:
+      - 80:8080
+      - 443:8443
+      - 9900:9900
+    volumes:
+      - ./tls-certificates/downstream/tls.crt:/certs/downstream.crt:ro
+      - ./tls-certificates/downstream/tls.key:/certs/downstream.key:ro
+      - ./tls-certificates/downstream/tls.crt:/certs/downstream-ca.crt:ro
+      - ./tls-certificates/upstream/api-gateway/tls.crt:/certs/upstream.crt:ro 
+      - ./tls-certificates/upstream/api-gateway/tls.key:/certs/upstream.key:ro
+      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
+
   lamassu-db:
     image: lamassuiot/lamassu-db:${LAMASSU_DB_DOCKER_TAG}
     container_name: lamassu-db
@@ -17,24 +35,6 @@ services:
       - postgres_db_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
-
-  api-gateway:
-    image: lamassuiot/lamassu-gateway:${LAMASSU_GATEWAY_DOCKER_TAG}
-    container_name: api-gateway 
-    ports:
-      - 80:8080
-      - 443:8443
-      - 9900:9900
-    volumes:
-      - ./config/envoy/config.yaml:/etc/envoy/envoy.yaml:ro
-      - ./tls-certificates/downstream/tls.crt:/certs/downstream.crt:ro
-      - ./tls-certificates/downstream/tls.key:/certs/downstream.key:ro
-      - ./tls-certificates/downstream/tls.crt:/certs/downstream-ca.crt:ro
-      - ./tls-certificates/upstream/api-gateway/tls.crt:/certs/upstream.crt:ro 
-      - ./tls-certificates/upstream/api-gateway/tls.key:/certs/upstream.key:ro
-      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
-    command: "-c /etc/envoy/envoy.yaml -l debug"
-    # command: "-c /etc/envoy/envoy.yaml"
 
   opa-server:
     image: openpolicyagent/opa:latest-envoy
@@ -64,6 +64,7 @@ services:
   
   ui:
     image: lamassuiot/lamassu-ui:${LAMASSU_UI_DOCKER_TAG}
+    container_name: lamassu-ui
     environment:
       REACT_APP_AUTH_ENDPOINT: https://dev.lamassu.io:8443/auth
       REACT_APP_AUTH_REALM: "lamassu"
@@ -74,8 +75,8 @@ services:
       REACT_APP_CONSUL_API: "https://dev.lamassu.io:8501"
       REACT_APP_DEFAULT_DMS_URL: "https://dev.lamassu.io:5000"
     volumes: 
-      - ./tls-certificates/upstream/ui/tls.crt:/certs/tls.crt
-      - ./tls-certificates/upstream/ui/tls.key:/certs/tls.key
+      - ./tls-certificates/upstream/ui/tls.crt:/certs/ui.crt
+      - ./tls-certificates/upstream/ui/tls.key:/certs/ui.key
     restart: on-failure
 
 
@@ -226,4 +227,3 @@ services:
       - ./tls-certificates/upstream/rabbitmq/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-

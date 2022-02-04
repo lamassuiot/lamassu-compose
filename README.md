@@ -58,9 +58,9 @@ export DOMAIN=dev.lamassu.io
     The different APIs exposed through the gateway have been configured to ONLY accept request originates inside the platform via a mTLS authentication:
 
     ```
-    ┌────────────────┐                    ┌───────────┐                  ┌─────────┐
-    │ Client/Browser │ ---<downstream>--- │  Gateway  │ ---<upstream>--- │   API   │
-    └────────────────┘         TLS        └───────────┘       mTLS       └─────────┘
+    ┌────────────────┐                       ┌───────────┐                      ┌─────────┐
+    │ Client/Browser │ -----<downstream>---- │  Gateway  │ -----<upstream>----- │   API   │
+    └────────────────┘          TLS          └───────────┘          mTLS        └─────────┘
     ```
 
     1. Generate the upstream certificates. 
@@ -97,7 +97,7 @@ export DOMAIN=dev.lamassu.io
 7. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. dev.lamassu.io. **Replace all domain ocurrences of dev.lamassu.io to your domian from the following files**:
 
 ```
-sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' config/envoy/config.yaml
+sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 ```
     
 7. Configure Keycloak:

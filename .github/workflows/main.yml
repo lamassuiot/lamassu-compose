@@ -2,6 +2,11 @@ name: Main Workflow
 
 on:
   push:
+    paths:
+      - config/auth
+      - config/envoy
+      - config/rabbitmq
+      - config/postgres
     branches:
       - develop
       - master

@@ -23,7 +23,9 @@ services:
       - ./tls-certificates/upstream/api-gateway/tls.crt:/certs/upstream.crt:ro 
       - ./tls-certificates/upstream/api-gateway/tls.key:/certs/upstream.key:ro
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
-
+    depends_on:
+      - jaeger
+      
   lamassu-db:
     image: lamassuiot/lamassu-db:${LAMASSU_DB_DOCKER_TAG}
     container_name: lamassu-db
@@ -37,7 +39,7 @@ services:
       - 5432:5432
 
   opa-server:
-    image: openpolicyagent/opa:latest-envoy
+    image: openpolicyagent/opa:0.37.1-envoy
     container_name: opa-server
     volumes:
       - ./config/opa/policy.rego:/opa/policy.rego
@@ -53,7 +55,7 @@ services:
       - "/opa/policy.rego"
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.30.0
     container_name: jaeger
     environment:
       SPAN_STORAGE_TYPE: badger

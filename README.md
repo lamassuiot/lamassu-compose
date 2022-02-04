@@ -10,22 +10,15 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 <img src="lamassu-app.png" alt="Lamassu App" title="Lamassu" />
 
-## Known Issues
+## Lamassu UIs
 
-:warning: As per this release, docker has a known bug that causes dockerd hanging when fluentd is shut down. This issue occurs as docker will try to reconnect to fluentd indefinetly. For mor information refer to the issue: https://github.com/moby/moby/issues/40063 
-
-The issue should be solved once the `fluentd-async` docker plugin is updated with this PR: https://github.com/fluent/fluent-logger-golang/pull/82 
-
-To prevent his issue from happening, the docker-compose `logging` directive has been commented. 
-
-## Lamassu URLs
-
-| Service                                   | URL                               |
-|-------------------------------------------|-----------------------------------|
-| Lamassu UI                                | https://dev.lamassu.io            |
-| Keycloak (Authentication)                 | https://auth.dev.lamassu.io       |
-| Vault (PKI storage)                       | https://vault.dev.lamassu.io      |
-| Jaeger UI  (Tracing microservices calls)  | https://tracing.dev.lamassu.io    |
+| Service                                   | URL                                   |
+|-------------------------------------------|---------------------------------------|
+| Lamassu UI                                | https://dev.lamassu.io                |
+| Keycloak (Authentication)                 | https://auth.dev.lamassu.io           |
+| Vault (PKI storage)                       | https://vault.dev.lamassu.io          |
+| Jaeger UI  (Tracing microservices calls)  | https://tracing.dev.lamassu.io        |
+| RabbitMQ Admin Page  (Async events)       | https://ui-rabbitmq.dev.lamassu.io    |
 
 ## Usage
 To launch Lamassu follow the next steps:
@@ -58,9 +51,9 @@ export DOMAIN=dev.lamassu.io
     The different APIs exposed through the gateway have been configured to ONLY accept request originates inside the platform via a mTLS authentication:
 
     ```
-    ┌────────────────┐                       ┌───────────┐                      ┌─────────┐
-    │ Client/Browser │ -----<downstream>---- │  Gateway  │ -----<upstream>----- │   API   │
-    └────────────────┘          TLS          └───────────┘          mTLS        └─────────┘
+    ┌────────────────┐                       ┌───────────────┐                      ┌─────────────┐
+    │ Client/Browser │ -----<downstream>---- │    Gateway    │ -----<upstream>----- │     API     │
+    └────────────────┘          TLS          └───────────────┘          mTLS        └─────────────┘
     ```
 
     1. Generate the upstream certificates. 
@@ -85,16 +78,15 @@ export DOMAIN=dev.lamassu.io
             ```
             ./gen-downstream-certs.sh
             ```
+    3. :warning: **This should be fixed in future updates** Run the following commands, otherwise some services will fail:
 
+    ```
+    cd ..
+    sudo chmod -R 777  tls-certificates/upstream/
+    sudo chmod -R 777  tls-certificates/downstream/
+    ```
 
-6. Unless you have a DNS server that is able to resolve the IP of your domain to yourhost, it is recommended adding a new entry to the `/etc/hosts` file. **Replace `dev.lamassu.io` with your domain (The same as the exported DOMAIN env variable).**  
-```
-127.0.0.1   dev.lamassu.io
-127.0.0.1   vault.dev.lamassu.io
-127.0.0.1   keycloak.dev.lamassu.io
-```
-
-7. In order tu run Lamassus's docker-compose, some adjustments are required. The communication between the different containers will be done trough TLS using the certificates created earlier, thus, the communication between container must use the `DOMAIN` i.e. dev.lamassu.io. **Replace all domain ocurrences of dev.lamassu.io to your domian from the following files**:
+7. In order tu run Lamassus's docker-compose, some adjustments are required. The Gateway will has been configured to route traffic based on the hostname/domain used. Provided a `DOMAIN` to be used as the base domain i.e. dev.lamassu.io: 
 
 ```
 sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
@@ -131,7 +123,7 @@ sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' docker-compose.yml
 9. Provision and configure Vault secret engine:
     1. Run Vault: 
     ```
-    docker-compose up -d vault
+    docker-compose up -d vault consul api-gateway
     ``` 
     2. Initalize vault: This process generates vault's unseal keys as well as the root token:
     ```

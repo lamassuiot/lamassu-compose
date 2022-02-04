@@ -1,0 +1,10 @@
+{
+    "common_name": "Lamassu DMS Enroller",
+    "key_type": "rsa",
+    "key_bits": "4096",
+    "organization": "Lamassu PKI",
+    "country": "",
+    "ttl": "262800h",
+    "province": "",
+    "locality": ""
+}

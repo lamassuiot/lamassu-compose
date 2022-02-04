@@ -1,0 +1,93 @@
+name: Main Workflow
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+
+jobs:
+  build_gateway_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Automatic Tag (Bump version and push tag)
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches : "master,main,develop"
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build the Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: config/envoy/Dockerfile
+          push: true
+          tags: lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_tag }}
+
+  build_lamassu_db_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Automatic Tag (Bump version and push tag)
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches : "master,main,develop"
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build the Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: config/postgres/Dockerfile
+          push: true
+          tags: lamassuiot/lamassu-db:${{ steps.tag_version.outputs.new_tag }}
+          
+  build_rabbitmq_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Automatic Tag (Bump version and push tag)
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches : "master,main,develop"
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build the Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: config/rabbitmq/Dockerfile
+          push: true
+          tags: lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_tag }}
+          

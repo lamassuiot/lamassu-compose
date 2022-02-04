@@ -1,1 +1,0 @@
-{"policy":"path \"Lamassu-Root-CA4-ECC256*\" {\n capabilities=[\"create\", \"read\", \"update\", \"delete\", \"list\", \"sudo\"]\n}"}

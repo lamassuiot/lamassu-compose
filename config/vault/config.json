@@ -1,0 +1,17 @@
+{
+    "ui": true,
+    "listener": {
+        "tcp": {
+            "address": "0.0.0.0:8200",
+            "tls_cert_file": "/vault/tls/tls.crt",
+            "tls_key_file": "/vault/tls/tls.key"
+        }
+    },
+    "storage": {
+        "consul": {
+            "address": "https://consul-server:8501",
+            "path": "vault",
+            "tls_ca_file": "/vault/tls/consul.crt"
+        }
+    }
+}

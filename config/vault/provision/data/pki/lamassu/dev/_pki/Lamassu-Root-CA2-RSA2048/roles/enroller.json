@@ -1,0 +1,6 @@
+{
+    "allow_any_name": true,
+    "ttl": "175200h",
+    "max_ttl": "262800h",
+    "key_type": "any"
+}

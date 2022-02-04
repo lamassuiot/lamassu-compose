@@ -1,0 +1,8 @@
+plugins:
+  envoy_ext_authz_grpc:
+    addr: :9191
+    path: lamassu/gateway/security/allow
+decision_logs:
+  console: true
+status:
+  console: true

@@ -1,3 +1,6 @@
-lamassu
-*.crt
-*.key
+vault-credentials.json
+tls-certificates/**/*.csr
+tls-certificates/**/*.crt
+tls-certificates/**/*.key
+tls-certificates/**/*.srl
+docker-compose-dev.yml

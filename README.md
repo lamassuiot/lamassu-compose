@@ -31,7 +31,10 @@ To launch Lamassu follow the next steps:
 
 1. Set up your environment:
 
-    1. Clone the repository and get into the directory: `git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose`.
+    1. Clone the repository and get into the directory: 
+        ```
+        git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
+        ```
 
     2. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**
 
@@ -93,8 +96,8 @@ To launch Lamassu follow the next steps:
 
         ```
         cd ..
-        sudo chmod -R 777  tls-certificates/upstream/
-        sudo chmod -R 777  tls-certificates/downstream/
+        sudo chmod -R 777 tls-certificates/upstream/
+        sudo chmod -R 777 tls-certificates/downstream/
         ```
     
 3. Authentication service configuration:
@@ -128,7 +131,7 @@ To launch Lamassu follow the next steps:
 4. Provision and configure Vault and Lamassu CA:
     1. Run Vault: 
         ```
-        docker-compose up -d vault consul api-gateway
+        docker-compose up -d vault consul-server api-gateway
         ``` 
     2. Initalize vault: This process generates vault's unseal keys as well as the root token:
         ```
@@ -137,22 +140,29 @@ To launch Lamassu follow the next steps:
     3. Verify the `vault-credentials.json` file has the expected content. It should be similar to this:
         ```
         {
-            "keys": [
-                "700060e1b7b2fb8611dd573981ceac18fb5c4947e9e756b51054aa435f49ecb019",
-                "a16c1d059391e67edd9ddbd9138cca7b5430f191170392167a63b7bb4b086d0ce3",
-                "e22edcde992bac128e5b30295da8be5795926c7253ef17a159bf9ecddc05d8c053",
-                "ad0e6680d1ee343d79d7a5c539f43885679671931b5700eab321420d045e7e0d2b",
-                "2eebfbb487bc9fcb89f3fd7ef17b92b0a4243bdec2be1e1aeaa79651f496d36824"
+            "unseal_keys_b64": [
+                "Hfx46iMq/PXoBPhDZ0EAMM9MDWS8GTCANFbAkzVEzFOD",
+                "lfo48PHGFGHmpaFn6Z6rWTXTXVS53m9duxsvwVjRDc2L",
+                "dcVw6N81i+/pY34WTHQYkV848to7jNeVkgdJOtgxnRkS",
+                "Aut6oL7+GomXCrrTH0FCKhJwAs2PrWFYSnWpgjLfwsH0",
+                "pprFM0HJEUR4m3kaIT5sga87aJ4AjXi32KVn6dgfivii"
             ],
-            "keys_base64": [
-                "cABg4bey+4YR3Vc5gc6sGPtcSUfp51a1EFSqQ19J7LAZ",
-                "oWwdBZOR5n7dndvZE4zKe1Qw8ZEXA5IWemO3u0sIbQzj",
-                "4i7c3pkrrBKOWzApXai+V5WSbHJT7xehWb+ezdwF2MBT",
-                "rQ5mgNHuND1516XFOfQ4hWeWcZMbVwDqsyFCDQRefg0r",
-                "Luv7tIe8n8uJ8/1+8XuSsKQkO97Cvh4a6qeWUfSW02gk"
+            "unseal_keys_hex": [
+                "1dfc78ea232afcf5e804f84367410030cf4c0d64bc1930803456c0933544cc5383",
+                "95fa38f0f1c61461e6a5a167e99eab5935d35d54b9de6f5dbb1b2fc158d10dcd8b",
+                "75c570e8df358befe9637e164c7418915f38f2da3b8cd7959207493ad8319d1912",
+                "02eb7aa0befe1a89970abad31f41422a127002cd8fad61584a75a98232dfc2c1f4",
+                "a69ac53341c91144789b791a213e6c81af3b689e008d78b7d8a567e9d81f8af8a2"
             ],
-            "root_token": "s.IOuVWvB8B1xcWYhNrx1A4mvy"
+            "unseal_shares": 5,
+            "unseal_threshold": 3,
+            "recovery_keys_b64": [],
+            "recovery_keys_hex": [],
+            "recovery_keys_shares": 5,
+            "recovery_keys_threshold": 3,
+            "root_token": "s.80Mpm0OmxlXzoSxZB2MMPcNu"
         }
+
         ```
     
     3. Export the following variables:
@@ -163,9 +173,9 @@ To launch Lamassu follow the next steps:
 
     4. Unseal Vault using the keys obtained with the previous command:
         ```
-        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[0])\" }"
-        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[1])\" }"
-        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .keys[2])\" }"
+        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[0])\" }"
+        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
+        curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[2])\" }"
         ```
     
     5. Vault must be provisioned with some resources (authentication methods, policies and secret engines). That can be achieved by running the `ca-provision.sh` script. Vault will be provisioned with 4 Root CAs, 1 Special CA (Lamassu-DMS-Enroller) AppRole authentication method and one role and policy for each service or container that needs to exchange data with it. 
@@ -178,12 +188,12 @@ To launch Lamassu follow the next steps:
 
     6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
         ```
-        export CA_VAULTROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )
-        export CA_VAULTSECRETID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id | jq -r .data.secret_id)
+        export CA_VAULT_ROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )
+        export CA_VAULT_SECRETID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id | jq -r .data.secret_id)
 
         # Set RoleID and SecretID in .env file
-        sed -i 's/ROLE_ID_TO_BE_REPLACED/'$CA_VAULTROLEID'/g' .env
-        sed -i 's/SECRET_ID_TO_BE_REPLACED/'$CA_VAULTSECRETID'/g' .env
+        sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' .env
+        sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' .env
         ```
 
 5. Configure the Device Manager:

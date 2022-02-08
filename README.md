@@ -92,14 +92,7 @@ To launch Lamassu follow the next steps:
             ```
             ./gen-downstream-certs.sh
             ```
-    3. :warning: **This should be fixed in future updates** Run the following commands, otherwise some services will fail:
 
-        ```
-        cd ..
-        sudo chmod -R 777 tls-certificates/upstream/
-        sudo chmod -R 777 tls-certificates/downstream/
-        ```
-    
 3. Authentication service configuration:
     1. Run Keycloak: 
         ```
@@ -209,25 +202,29 @@ docker-compose up -d
 7. Configure the `Default DMS`
     1. First, authenticate against Keycloak:
         ```
-        export TOKEN=$(curl -k --location --request POST "https://$DOMAIN:8443/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+        export AUTH_ADDR=auth.$DOMAIN
+
+        export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
         ```
     2. Then, register a new DMS named Lamassu-Default-DMS:
         
         **Note: while registering new DMS instances with non admin users, it is necessary to register the DMS using the user's username as the common name, otherwise, the user won't see its DMSs**   
         ```    
-        export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$DOMAIN:8085/v1/csrs/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"url\":\"https://${DOMAIN}:5000\", \"common_name\": \"Lamassu-Default-DMS\",\"country\": \"\",\"key_bits\": 3072,\"key_type\": \"rsa\",\"locality\": \"\",\"organization\": \"\",\"organization_unit\": \"\",\"state\": \"\"}")
+        export ENROLL_ADDR=$DOMAIN/api/dmsenroller
+
+        export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$ENROLL_ADDR/v1/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"url\":\"https://${DOMAIN}:5000\", \"common_name\": \"Lamassu-Default-DMS\",\"country\": \"\",\"key_bits\": 3072,\"key_type\": \"rsa\",\"locality\": \"\",\"organization\": \"\",\"organization_unit\": \"\",\"state\": \"\"}")
         
         echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' > lamassu-default-dms.key
 
-        export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .csr.id)
+        export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .dms.id)
         ```
     3. Enroll the new DMS
         ```
-        curl -k --location --request PUT "https://$DOMAIN:8085/v1/csrs/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
+        curl -k --location --request PUT "https://$ENROLL_ADDR/v1/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
         ```
     4. Get issued DMS Cert
         ```
-        curl -k --location --request GET "https://$DOMAIN:8085/v1/csrs/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt 
+        curl -k --location --request GET "https://$ENROLL_ADDR/v1/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt
         ```
     5. The DMS requires the following keys and certicates:
     

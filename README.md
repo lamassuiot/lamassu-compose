@@ -257,16 +257,16 @@ To launch Lamassu follow the next steps:
 
     
 6. Start the remaining services:
-```
-docker-compose up -d
-```
+    ```
+    docker-compose up -d
+    ```
 
 7. Configure the `Default DMS`
     1. First, authenticate against Keycloak:
         ```
         export AUTH_ADDR=auth.$DOMAIN
 
-        export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=admin-cli' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+        export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
         ```
     2. Then, register a new DMS named Lamassu-Default-DMS:
         
@@ -274,9 +274,10 @@ docker-compose up -d
         ```    
         export ENROLL_ADDR=$DOMAIN/api/dmsenroller
 
-        export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$ENROLL_ADDR/v1/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"url\":\"https://${DOMAIN}:5000\", \"common_name\": \"Lamassu-Default-DMS\",\"country\": \"\",\"key_bits\": 3072,\"key_type\": \"rsa\",\"locality\": \"\",\"organization\": \"\",\"organization_unit\": \"\",\"state\": \"\"}")
+        export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$ENROLL_ADDR/v1/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"url\":\"https://${DOMAIN}:5000\", \" subject\":{ \"common_name\": \"Lamassu-Default-DMS\",\"country\": \"\",\"locality\": \"\",\"organization\": \"\",\"organization_unit\": \"\",\"state\": \"\"},\"key_metadata\":{\"bits\": 3072,\"type\": \"rsa\"}}")
+
         
-        echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' > lamassu-default-dms.key
+        echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' | base64 -d > lamassu-default-dms/config/dms.key
 
         export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .dms.id)
         ```
@@ -286,34 +287,15 @@ docker-compose up -d
         ```
     4. Get issued DMS Cert
         ```
-        curl -k --location --request GET "https://$ENROLL_ADDR/v1/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" > lamassu-default-dms.crt
-        ```
-    5. The DMS requires the following keys and certicates:
-    
-        ```
-        cp lamassu/lamassu.crt lamassu-default-dms/device-manager.crt
-        cp lamassu/lamassu.crt lamassu-default-dms/https.crt
-        cp lamassu/lamassu.key lamassu-default-dms/https.key
-        ```
-        
-        ```
-        cp lamassu-default-dms.crt lamassu-default-dms/enrolled-dms.crt
-        cp lamassu-default-dms.key lamassu-default-dms/enrolled-dms.key
+        curl -k --location --request GET "https://$ENROLL_ADDR/v1/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" | base64 -d > lamassu-default-dms/config/dms.crt
         ```
     
     6. And finally, start the DMS "server":
         ```
-        cd lamassu-default-dms
-        sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' index.js
-        docker-compose up -d
+        docker-compose rm -s -f dms-default
+        docker-compose up -d dms-default
         ```
-        The server has the following endpoint:
-        `dev.lamassu.io:5000/dms-issue/<DEVICE_ID>/<CA_NAME>` This endpoint enrolls a registered device
-            
-        Once enrolled, the device certificate can be obtained using the following endpoint exposed by the `DEVICE Manager` service:
-        ```
-        curl -k --location --request GET "https://$DOMAIN:8089/v1/devices/<DEVICE_ID>/cert" --header "Authorization: Bearer $TOKEN" 
-        ```
+
 ### Using the APIs
 
 The main 3 Open API documentation can be found on the following urls:
@@ -340,7 +322,7 @@ By default, all self-signed certificates (both upstream and downstream) have a l
     ./gen-downstream-certs.sh
     cd ..
     ```
-    
+
 2. Reboot all services:
     ```
     docker-compose down

@@ -9,6 +9,10 @@ allow  {
 }
 
 action_allowed {
+  startswith(http_request.path, "/api/devmanager/.well-known/")
+}
+
+action_allowed {
   allowed_methods := ["OPTIONS"]
   allowed_methods[_] == http_request.method 
 }

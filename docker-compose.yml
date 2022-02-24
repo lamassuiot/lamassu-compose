@@ -227,3 +227,24 @@ services:
       - ./tls-certificates/upstream/rabbitmq/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+  
+  dms-default:
+    build:
+        context: lamassu-default-dms
+    environment:
+      PORT: 5000
+      DOMAIN: ${DOMAIN}
+    ports:
+      - 5000:5000
+    volumes:
+      - ./lamassu-default-dms/index.js:/app/index.js
+      - ./lamassu-default-dms/devices-crypto-material:/app/devices-crypto-material
+      - ./tls-certificates/downstream/tls.crt:/app/device-manager-anchor.crt
+      - ./lamassu-default-dms/config/dms.crt:/app/enrolled-dms.crt
+      - ./lamassu-default-dms/config/dms.key:/app/enrolled-dms.key
+      - ./tls-certificates/downstream/tls.crt:/app/https.crt
+      - ./tls-certificates/downstream/tls.key:/app/https.key
+    restart: on-failure
+    links:
+      - "api-gateway:${DOMAIN}"
+    entrypoint: "node /app/index.js"

@@ -76,7 +76,7 @@ static_resources:
                         - match:
                             safe_regex:
                               google_re2: {}
-                              regex: "\/api\/ca\/(v1\/docs|openapiv3.json)"
+                              regex: "\/api\/ca\/v1\/docs(.*|\/.*)*"
                           route:
                             regex_rewrite: 
                               pattern: 
@@ -84,6 +84,44 @@ static_resources:
                                 regex: \/api\/ca\/
                               substitution: /
                             cluster: api_ca_cluster
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+
+                        - match:
+                            safe_regex:
+                              google_re2: {}
+                              regex: "\/api\/dmsenroller\/v1\/docs(.*|\/.*)*"
+                          route:
+                            regex_rewrite: 
+                              pattern: 
+                                google_re2: {}
+                                regex: \/api\/dmsenroller\/
+                              substitution: /
+                            cluster: api_dms_enroller_cluster
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+
+                        - match:
+                            safe_regex:
+                              google_re2: {}
+                              regex: "\/api\/devmanager\/v1\/docs(.*|\/.*)*"
+                          route:
+                            regex_rewrite: 
+                              pattern: 
+                                google_re2: {}
+                                regex: \/api\/devmanager\/
+                              substitution: /
+                            cluster: api_device_manager_cluster
                           typed_per_filter_config:
                             envoy.filters.http.ext_authz:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -114,6 +152,13 @@ static_resources:
                             prefix: "/"
                           route:
                             cluster: ui_cluster
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
 
 
                     - name: default-dms
@@ -266,14 +311,17 @@ static_resources:
                               - name: ":authority"
                                 exact_match: "tracing.${DOMAIN}"
                         - match:
-                            prefix: "/api/device-manager/.well-known/est"
-                        - match:
-                            prefix: "/api/"
+                            prefix: "/"
                             headers: 
                               - name: ":authority"
                                 exact_match: "rabbitmq.${DOMAIN}"
-                          requires:
-                            provider_name: "lamassu_oidc_provider"
+                        - match:
+                            prefix: "/"
+                            headers: 
+                              - name: ":authority"
+                                exact_match: "ui-rabbitmq.${DOMAIN}"
+                        - match:
+                            prefix: "/api/devmanager/.well-known/est"
                         - match:
                             prefix: "/api/"
                           requires:

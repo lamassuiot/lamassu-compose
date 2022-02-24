@@ -2,29 +2,26 @@ package lamassu.gateway.security
 
 import input.attributes.request.http as http_request
 
-# default allow = false
-default allow = true
+default allow = false
 
 allow  {
-    is_token_valid
     action_allowed
 }
 
-is_token_valid {
-    now := time.now_ns() / 1000000000
-    token.payload.iat <= now
-    now < token.payload.exp
+action_allowed {
+  allowed_methods := ["OPTIONS"]
+  allowed_methods[_] == http_request.method 
 }
 
 action_allowed {
-  http_request.method == "GET"
-  startswith(http_request.path, "/api/ca/v1/ca")
   token.payload.realm_access.roles[_] == "admin"
 }
 
 action_allowed {
-  http_request.method == "GET"
-  startswith(http_request.path, "/api/ca/v1/health")
+  allowed_methods := ["GET", "POST"]
+  allowed_methods[_] == http_request.method 
+  startswith(http_request.path, "/api/dmsenroller/")
+  token.payload.realm_access.roles[_] == "operator"
 }
 
 token := {"payload": payload} {

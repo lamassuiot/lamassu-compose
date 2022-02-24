@@ -328,3 +328,21 @@ The main 3 Open API documentation can be found on the following urls:
 ⚠️ The following endpoints defined in the Lamassu Device Manager Api specification are not correctly defined due to the limitations imposed by the Open API 3.0 schema. The current specification defines an `OIDC` security schema (meaining that a valid JWT token must be provided while requesting the API) while the implemented security schema uses the `mTLS` approach. This issue will be resolved once the specification is Open API 3.1 compliant. The affected endpoints are:
 
 <img src="assets/missing-mtls-openapi.png" alt="Lamassu App" title="Lamassu" />
+
+## Certificate rotation
+
+By default, all self-signed certificates (both upstream and downstream) have a lifespan of 365 days. At that point it will be necesary to regenerate the expired certificates:
+
+1. Regenerate the certificates:
+    ```
+    cd tls-certificates
+    ./gen-upstream-certs.sh
+    ./gen-downstream-certs.sh
+    cd ..
+    ```
+    
+2. Reboot all services:
+    ```
+    docker-compose down
+    docker-compose up -d
+    ```

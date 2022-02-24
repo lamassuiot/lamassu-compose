@@ -1,7 +1,10 @@
 name: Main Workflow
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Test scenario label'  
   push:
     paths:
       - config/auth/**

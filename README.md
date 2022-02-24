@@ -1,5 +1,5 @@
 <a href="https://www.lamassu.io/">
-    <img src="logo.png" alt="Lamassu logo" title="Lamassu" align="right" height="80" />
+    <img src="assets/logo.png" alt="Lamassu logo" title="Lamassu" align="right" height="80" />
 </a>
 
 Lamassu Compose
@@ -8,7 +8,7 @@ Lamassu Compose
 
 This repository contains the Docker compose files for deploying the [Lamassu](https://www.lamassu.io) services in Docker.
 
-<img src="lamassu-app.png" alt="Lamassu App" title="Lamassu" />
+<img src="assets/lamassu-app.png" alt="Lamassu App" title="Lamassu" />
 
 ## Lamassu UIs
 
@@ -20,12 +20,74 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 | Jaeger UI  (Tracing microservices calls)  | https://tracing.dev.lamassu.io        |
 | RabbitMQ Admin Page  (Async events)       | https://ui-rabbitmq.dev.lamassu.io    |
 
-## Setup 
-Requirements: 
+## Setup Requirements
 
 - `jq`. Get the latest version: https://stedolan.github.io/jq/download/ 
 - `docker` and `docker-compose`: Get the latest version: https://docs.docker.com/engine/install/ubuntu/ and https://docs.docker.com/compose/install/
 
+## Setup
+
+1. Clone the repository and get into the directory: 
+    ```
+    git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
+    ```
+
+2. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**
+    ```
+    DB_USER=<DB_USER> //Database user.
+    DB_PASSWORD=<DB_PASSWORD> //Database user password.
+    ```
+
+
+3. Define the domain to be used:
+    ```
+    export DOMAIN=dev.lamassu.io
+    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' .env
+    ```
+
+4. Run the installer:
+    ```
+    bash install.sh
+    ```
+
+5. (OPTIONAL) Import your certificates:
+
+The `install.sh` script also generates self-signed for the downstream certificates. It is posible to provide other valid certificates by replacing the following files:
+```
+├── upstream
+│   └── ...
+└── downstream
+    ├── tls.crt     <----- Provide your certificate
+    └── tls.key     <----- Provide your private key
+```
+
+Once you replace this certificates, restart the api-gateway to obtain the imported certificates:
+
+```
+docker-compose rm -s -f api-gateway
+docker-compose up -d api-gateway
+```
+
+6. Final notes:
+    
+    🚀 You are ready to go 🚀
+    
+    Note the following things:
+
+    -   Keycloak is your auth provider. During the `install.sh` the service is provisioned with 2 users with different roles:
+        ```
+        Username: enroller
+        Password: enroller
+        Role: admin
+        ```
+        ```
+        Username: operator
+        Password: operator
+        Role: operator
+        ```
+        You can change those credentials (or create new users) using keycloak's UI available at: `https://auth.<DOMAIN>`
+
+## Manual Setup 
 
 To launch Lamassu follow the next steps:
 
@@ -255,9 +317,12 @@ docker-compose up -d
 ### Using the APIs
 
 The main 3 Open API documentation can be found on the following urls:
-    - https://dev-lamassu.zpd.ikerlan.es/api/ca/v1/docs/
-    - https://dev-lamassu.zpd.ikerlan.es/api/dmsenroller/v1/docs/
-    - https://dev-lamassu.zpd.ikerlan.es/api/devmanager/v1/docs/
+
+    - https://dev.lamassu.io/api/ca/v1/docs/
+
+    - https://dev.lamassu.io/api/dmsenroller/v1/docs/
+
+    - https://dev.lamassu.io/api/devmanager/v1/docs/
 
 
 ⚠️ The following endpoints defined in the Lamassu Device Manager Api specification are not correctly defined due to the limitations imposed by the Open API 3.0 schema. The current specification defines an `OIDC` security schema (meaining that a valid JWT token must be provided while requesting the API) while the implemented security schema uses the `mTLS` approach. This issue will be resolved once the specification is Open API 3.1 compliant. The affected endpoints are:

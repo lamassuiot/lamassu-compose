@@ -11,6 +11,7 @@ bash gen-upstream-certs.sh > /dev/null 2>&1
 
 echo "2) Generating downstream certificates"
 bash gen-downstream-certs.sh > /dev/null 2>&1
+cd ..
 
 echo "3) Launching Auth server"
 docker-compose up -d auth
@@ -40,8 +41,15 @@ done
 echo "5) Launching main services"
 docker-compose up -d vault consul-server api-gateway
 
-while ! curl --silent -k https://vault.$DOMAIN/v1/sys/health; do
-    sleep 5
+successful_vault_health="false"
+while [ $successful_vault_health == "false" ]; do
+    vault_status=$(curl --silent -k https://vault.$DOMAIN/v1/sys/health)
+    if jq -e . >/dev/null 2>&1 <<<"$vault_status"; then #Check if reload_status is json string
+        echo $vault_status
+        successful_vault_health="true"
+    else 
+        sleep 5s
+    fi
 done      
 
 echo "6) Initializing and provisioning vault"
@@ -55,8 +63,11 @@ curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: applic
 curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[1])\" }"
 curl --request PUT "$VAULT_ADDR/v1/sys/unseal" -k --header 'Content-Type: application/json' --data-raw "{\"key\": \"$(cat vault-credentials.json | jq -r .unseal_keys_hex[2])\" }"
 
+sleep 5s
+
 cd config/vault/provision/
-bash provisioner.sh > /dev/null 2>&1
+curl --silent -k https://vault.$DOMAIN/v1/sys/health -I
+bash provisioner.sh
 cd ../../../
 
 export CA_VAULT_ROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )

@@ -63,7 +63,7 @@ jobs:
         with:
           context: config/postgres
           push: true
-          tags: lamassuiot/lamassu-db:$latest
+          tags: lamassuiot/lamassu-db:latest
       
       - name: Build lamassu-auth Docker image
         uses: docker/build-push-action@v2

@@ -7,6 +7,7 @@ on:
         description: 'Test scenario label'  
   push:
     paths:
+      - .github/workflows/main.yml**
       - config/auth/**
       - config/envoy/**
       - config/rabbitmq/**

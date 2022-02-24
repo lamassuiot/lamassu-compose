@@ -569,3 +569,4 @@ static_resources:
                   filename: /certs/upstream.crt
                 private_key:
                   filename: /certs/upstream.key
+                

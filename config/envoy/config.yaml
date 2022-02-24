@@ -160,7 +160,6 @@ static_resources:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
                               disabled: true
 
-
                     - name: default-dms
                       domains:
                         - "default-dms.${DOMAIN}"

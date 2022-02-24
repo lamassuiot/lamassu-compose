@@ -43,8 +43,8 @@ jobs:
           context: config/envoy
           push: true
           tags: 
-            - "lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_tag }}"
-            - "lamassuiot/lamassu-gateway:latest"
+          - "lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_tag }}"
+          - "lamassuiot/lamassu-gateway:latest"
 
       - name: Build lamassu-db Docker image
         uses: docker/build-push-action@v2
@@ -52,8 +52,8 @@ jobs:
           context: config/postgres
           push: true
           tags: 
-            - "lamassuiot/lamassu-db:${{ steps.tag_version.outputs.new_tag }}"
-            - "lamassuiot/lamassu-db:latest"
+          - "lamassuiot/lamassu-db:${{ steps.tag_version.outputs.new_tag }}"
+          - "lamassuiot/lamassu-db:latest"
       
 
       - name: Build lamassu-auth Docker image
@@ -62,8 +62,8 @@ jobs:
           context: config/auth
           push: true
           tags: 
-            - "lamassuiot/lamassu-auth:${{ steps.tag_version.outputs.new_tag }}"
-            - "lamassuiot/lamassu-auth:latest"
+          - "lamassuiot/lamassu-auth:${{ steps.tag_version.outputs.new_tag }}"
+          - "lamassuiot/lamassu-auth:latest"
 
       - name: Build lamassu-rabbitmq Docker image
         uses: docker/build-push-action@v2
@@ -71,5 +71,5 @@ jobs:
           context: config/rabbitmq
           push: true
           tags: 
-            - "lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_tag }}"
-            - "lamassuiot/lamassu-rabbitmq:latest"
+          - "lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_tag }}"
+          - "lamassuiot/lamassu-rabbitmq:latest"

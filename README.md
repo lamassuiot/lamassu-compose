@@ -52,21 +52,21 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 5. (OPTIONAL) Import your certificates:
 
-The `install.sh` script also generates self-signed for the downstream certificates. It is posible to provide other valid certificates by replacing the following files:
-```
-├── upstream
-│   └── ...
-└── downstream
-    ├── tls.crt     <----- Provide your certificate
-    └── tls.key     <----- Provide your private key
-```
+    The `install.sh` script also generates self-signed for the downstream certificates. It is posible to provide other valid certificates by replacing the following files:
+    ```
+    ├── upstream
+    │   └── ...
+    └── downstream
+        ├── tls.crt     <----- Provide your certificate
+        └── tls.key     <----- Provide your private key
+    ```
 
-Once you replace this certificates, restart the api-gateway to obtain the imported certificates:
+    Once you replace this certificates, restart the api-gateway to obtain the imported certificates:
 
-```
-docker-compose rm -s -f api-gateway
-docker-compose up -d api-gateway
-```
+    ```
+    docker-compose rm -s -f api-gateway
+    docker-compose up -d api-gateway
+    ```
 
 6. Final notes:
     
@@ -318,11 +318,13 @@ docker-compose up -d
 
 The main 3 Open API documentation can be found on the following urls:
 
-    - https://dev.lamassu.io/api/ca/v1/docs/
+- https://dev.lamassu.io/api/ca/v1/docs/
 
-    - https://dev.lamassu.io/api/dmsenroller/v1/docs/
+- https://dev.lamassu.io/api/dmsenroller/v1/docs/
 
-    - https://dev.lamassu.io/api/devmanager/v1/docs/
+- https://dev.lamassu.io/api/devmanager/v1/docs/
 
 
 ⚠️ The following endpoints defined in the Lamassu Device Manager Api specification are not correctly defined due to the limitations imposed by the Open API 3.0 schema. The current specification defines an `OIDC` security schema (meaining that a valid JWT token must be provided while requesting the API) while the implemented security schema uses the `mTLS` approach. This issue will be resolved once the specification is Open API 3.1 compliant. The affected endpoints are:
+
+<img src="assets/missing-mtls-openapi.png" alt="Lamassu App" title="Lamassu" />

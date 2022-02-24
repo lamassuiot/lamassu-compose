@@ -143,6 +143,8 @@ services:
       AMQP_IP: rabbitmq
       AMQP_PORT: "5671"
       AMQP_SERVER_CA_CERT_FILE: /certs/internal-ca.crt
+      OPENAPI_ENABLE_SECURITY_SCHEMA: "true"
+      OPENAPI_SECURITY_OIDC_WELL_KNOWN_URL: https://auth.${DOMAIN}/auth/realms/lamassu/.well-known/openid-configuration
     volumes:
       - ./tls-certificates/upstream/vault/tls.crt:/certs/vault.crt
       - ./tls-certificates/upstream/lamassu-ca/tls.crt:/certs/tls.crt
@@ -174,6 +176,8 @@ services:
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: "1"
       JAEGER_REPORTER_LOG_SPANS: "true"
+      OPENAPI_ENABLE_SECURITY_SCHEMA: "true"
+      OPENAPI_SECURITY_OIDC_WELL_KNOWN_URL: https://auth.${DOMAIN}/auth/realms/lamassu/.well-known/openid-configuration
     volumes:
       - ./tls-certificates/upstream/lamassu-dms-enroller/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/lamassu-dms-enroller/tls.key:/certs/tls.key
@@ -206,6 +210,8 @@ services:
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: "1"
       JAEGER_REPORTER_LOG_SPANS: "false"
+      OPENAPI_ENABLE_SECURITY_SCHEMA: "true"
+      OPENAPI_SECURITY_OIDC_WELL_KNOWN_URL: https://auth.${DOMAIN}/auth/realms/lamassu/.well-known/openid-configuration
     volumes:
       - ./tls-certificates/upstream/lamassu-device-manager/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/lamassu-device-manager/tls.key:/certs/tls.key

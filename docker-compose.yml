@@ -13,8 +13,8 @@ services:
       DOMAIN: ${DOMAIN}
       DEBUG_MODE: "false"
     ports:
-      - 80:8080
-      - 443:8443
+      - 80:80
+      - 443:443
       - 9900:9900
     volumes:
       - ./tls-certificates/downstream/tls.crt:/certs/downstream.crt:ro

@@ -63,8 +63,8 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
     Once you replace this certificates, restart the api-gateway to obtain the imported certificates:
 
     ```
-    docker-compose rm -s -f api-gateway
-    docker-compose up -d api-gateway
+    docker-compose rm -s -f api-gateway dms-default
+    docker-compose up -d api-gateway dms-default
     ```
 
 6. Final notes:

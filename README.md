@@ -32,17 +32,16 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
     git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
     ```
 
-2. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**
+2. Change the next secret environment variables in the `.env` file.
     ```
     DB_USER=<DB_USER> //Database user.
     DB_PASSWORD=<DB_PASSWORD> //Database user password.
     ```
 
 
-3. Define the domain to be used:
+3. Define the domain to be used by chaning the DOMAIN in the `.env` file. By default it is set to `dev.lamassu.io`
     ```
-    export DOMAIN=dev.lamassu.io
-    sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' .env
+    DOMAIN=dev.lamassu.io
     ```
 
 4. Run the installer:

@@ -98,19 +98,16 @@ To launch Lamassu follow the next steps:
         git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
         ```
 
-    2. Change the next secret environment variables in `.env` file. **If not changed, it will use admin/admin**
-
+    2. Change the next secret environment variables in `.env` file.
         ```
         DB_USER=<DB_USER> //Database user.
         DB_PASSWORD=<DB_PASSWORD> //Database user password.
         ```
 
 
-    3. Define the domain to be used:
-
+    3. Define the domain to be used by replacing the `.env` file.
         ```
-        export DOMAIN=dev.lamassu.io
-        sed -i 's/dev\.lamassu\.io/'$DOMAIN'/g' .env
+        DOMAIN=dev.lamassu.io
         ```
 
 
@@ -241,14 +238,14 @@ To launch Lamassu follow the next steps:
         cd ../../../
         ```    
 
-    6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.env` file.
+    6. Get RoleID and SecretID for each service and set those values in the empty fields of the `.docker-compose.yml` file.
         ```
         export CA_VAULT_ROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )
         export CA_VAULT_SECRETID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id | jq -r .data.secret_id)
 
-        # Set RoleID and SecretID in .env file
-        sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' .env
-        sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' .env
+        # Set RoleID and SecretID in docker-compose.yml file
+        sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' docker-compose.yml
+        sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' docker-compose.yml
         ```
 
 5. Configure the Device Manager:

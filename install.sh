@@ -50,11 +50,21 @@ while [ $successful_vault_health == "false" ]; do
     else 
         sleep 5s
     fi
-done      
+done
 
 echo "6) Initializing and provisioning vault"
 
-docker-compose exec vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json > vault-credentials.json
+successful_vault_credentials="false"
+while [ $successful_vault_credentials == "false" ]; do
+    vault_status=$(docker-compose exec vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
+    echo $vault_status
+    if jq -e . >/dev/null 2>&1 <<<"$vault_status"; then #Check if reload_status is json string
+        echo $vault_status > vault-credentials.json
+        successful_vault_credentials="true"
+    else 
+        sleep 5s
+    fi
+done
 
 export VAULT_TOKEN=$(cat vault-credentials.json | jq .root_token -r)
 export VAULT_ADDR=https://vault.$DOMAIN
@@ -70,12 +80,37 @@ curl --silent -k https://vault.$DOMAIN/v1/sys/health -I
 bash provisioner.sh
 cd ../../../
 
-export CA_VAULT_ROLEID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id | jq -r .data.role_id )
-export CA_VAULT_SECRETID=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id | jq -r .data.secret_id)
+sleep 5s
 
-sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' .env
-sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' .env
+export CA_VAULT_ROLEID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id)
+export CA_VAULT_ROLEID=$(echo $CA_VAULT_ROLEID_RESP | jq -r .data.role_id)
+export CA_VAULT_SECRETID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id)
+export CA_VAULT_SECRETID=$(echo $CA_VAULT_SECRETID_RESP  | jq -r .data.secret_id)
+
+sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' docker-compose.yml
+sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' docker-compose.yml
 
 echo "7) Launching remainig services"
 
-docker-compose up -d
+mkdir -p lamassu-default-dms/devices-crypto-material
+mkdir -p lamassu-default-dms/config
+touch lamassu-default-dms/config/dms.key
+touch lamassu-default-dms/config/dms.crt
+
+docker-compose up -d opa-server ui lamassu-dms-enroller lamassu-device-manager rabbitmq
+sleep 20s 
+docker-compose up -d lamassu-ca
+sleep 5s
+
+echo "8) Provisioning default DMS"
+
+export AUTH_ADDR=auth.$DOMAIN
+export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' |jq -r .access_token)
+export ENROLL_ADDR=$DOMAIN/api/dmsenroller
+export DMS_REGISTER_RESPONSE=$(curl -k --location --request POST "https://$ENROLL_ADDR/v1/Lamassu-Default-DMS/form" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"url\":\"https://${DOMAIN}:5000\", \" subject\":{ \"common_name\": \"Lamassu-Default-DMS\",\"country\": \"\",\"locality\": \"\",\"organization\": \"\",\"organization_unit\": \"\",\"state\": \"\"},\"key_metadata\":{\"bits\": 3072,\"type\": \"rsa\"}}")
+echo $DMS_REGISTER_RESPONSE | jq -r .priv_key | sed 's/\\n/\n/g' | sed -Ez '$ s/\n+$//' | base64 -d > lamassu-default-dms/config/dms.key
+export DMS_ID=$(echo $DMS_REGISTER_RESPONSE | jq -r .dms.id)
+curl -k --location --request PUT "https://$ENROLL_ADDR/v1/$DMS_ID" --header "Authorization: Bearer $TOKEN" --header 'Content-Type: application/json' --data-raw '{"status": "APPROVED"}'
+curl -k --location --request GET "https://$ENROLL_ADDR/v1/$DMS_ID/crt" --header "Authorization: Bearer $TOKEN" | base64 -d > lamassu-default-dms/config/dms.crt
+
+docker-compose up -d dms-default

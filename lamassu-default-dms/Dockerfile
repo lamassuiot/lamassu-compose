@@ -6,3 +6,4 @@ RUN apt-get install -y nodejs
 
 # Install GlobalSign - EST Client CLI 
 RUN go install github.com/lamassuiot/est/cmd/estclient@development
+USER 1000

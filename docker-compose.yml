@@ -35,8 +35,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
 
   opa-server:
     image: openpolicyagent/opa:0.37.1-envoy
@@ -127,8 +125,8 @@ services:
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
       OCSP_URL: https://lamassu-ocsp:9098
       VAULT_ADDRESS: https://vault:8200
-      VAULT_ROLE_ID: ${LAMASSU_CA_VAULT_ROLE_ID}
-      VAULT_SECRET_ID:  ${LAMASSU_CA_VAULT_SECRET_ID}
+      VAULT_ROLE_ID: <LAMASSU_CA_VAULT_ROLE_ID>
+      VAULT_SECRET_ID: <LAMASSU_CA_VAULT_SECRET_ID>
       VAULT_CA: /certs/vault.crt
       VAULT_PKI_CA_PATH: pki/lamassu/dev/
       VAULT_UNSEAL_KEYS_FILE: /config/vault-credentials.json
@@ -220,8 +218,6 @@ services:
   rabbitmq:
     image: lamassuiot/lamassu-rabbitmq:${LAMASSU_RABBITMQ_DOCKER_TAG}
     container_name: rabbitmq
-    ports:
-      - 5671:5671
     volumes:
       - ./tls-certificates/upstream/rabbitmq/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/rabbitmq/tls.key:/certs/tls.key
@@ -229,6 +225,7 @@ services:
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
   
   dms-default:
+    container_name: dms-default
     build:
         context: lamassu-default-dms
     environment:

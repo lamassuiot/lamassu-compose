@@ -9,5 +9,6 @@ CREATE TABLE public.dms_store (
     keyType TEXT,
     keyBits int,    
     csrBase64 TEXT,
-    status TEXT
+    status TEXT,
+    CAList TEXT
 );

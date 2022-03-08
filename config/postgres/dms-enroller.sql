@@ -13,7 +13,6 @@ CREATE TABLE public.dms_store (
 );
 
 CREATE TABLE public.authorized_cas (
-    id SERIAL PRIMARY KEY,
-    serialNumber TEXT,
+    dmsid TEXT PRIMARY KEY,
     caname  TEXT
 );

@@ -5,6 +5,8 @@ CREATE DATABASE devices;
 CREATE TABLE public.device_information (
     id TEXT PRIMARY KEY,
     alias TEXT,
+    description TEXT,
+    tags TEXT [],
     status TEXT,
     dms_id int,
     country TEXT,

@@ -7,7 +7,7 @@ CREATE TABLE public.dms_store (
     name TEXT,
     serialNumber TEXT,
     keyType TEXT,
-    keyBits int,    
+    keyBits int,
     csrBase64 TEXT,
     status TEXT,
     creation_ts timestamp,
@@ -15,7 +15,7 @@ CREATE TABLE public.dms_store (
 );
 
 CREATE TABLE public.authorized_cas (
-    dmsid TEXT PRIMARY KEY,
+    dmsid TEXT,
     caname  TEXT,
-    caSerialNumber  TEXT
+    PRIMARY KEY (dmsid,caname)
 );

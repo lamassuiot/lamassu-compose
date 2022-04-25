@@ -7,8 +7,10 @@ CREATE TABLE public.device_information (
     alias TEXT,
     description TEXT,
     tags TEXT [],
+    icon_name TEXT,
+    icon_color TEXT,
     status TEXT,
-    dms_id int,
+    dms_id TEXT,
     country TEXT,
     state TEXT,
     locality TEXT,
@@ -19,6 +21,7 @@ CREATE TABLE public.device_information (
     key_type TEXT,
     key_bits int,
     creation_ts timestamp,
+    modification_ts timestamp,
     current_cert_serial_number TEXT
 );
 
@@ -33,9 +36,7 @@ CREATE TABLE public.device_logs (
 CREATE TABLE public.device_certificates_history (
     serial_number TEXT PRIMARY KEY,
     device_uuid TEXT,
-    issuer_serial_number TEXT,
     issuer_name TEXT,
-    status TEXT,
     creation_ts timestamp
 );
 

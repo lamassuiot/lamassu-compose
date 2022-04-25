@@ -129,6 +129,25 @@ static_resources:
                             envoy.filters.http.jwt_authn:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
                               disabled: true
+
+                        - match:
+                            safe_regex:
+                              google_re2: {}
+                              regex: "\/api\/cloudproxy\/v1\/docs(.*|\/.*)*"
+                          route:
+                            regex_rewrite: 
+                              pattern: 
+                                google_re2: {}
+                                regex: \/api\/cloudproxy\/
+                              substitution: /
+                            cluster: api_cloud_proxy_cluster
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
                               
                         - match:
                             prefix: "/api/ca/"
@@ -149,6 +168,12 @@ static_resources:
                             cluster: api_dms_enroller_cluster
 
                         - match:
+                            prefix: "/api/cloudproxy/"
+                          route:
+                            prefix_rewrite: "/"
+                            cluster: api_cloud_proxy_cluster
+
+                        - match:
                             prefix: "/"
                           route:
                             cluster: ui_cluster
@@ -160,21 +185,6 @@ static_resources:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
                               disabled: true
 
-                    - name: default-dms
-                      domains:
-                        - "default-dms.${DOMAIN}"
-                      routes:
-                        - match:
-                            prefix: "/"
-                          route:
-                            cluster: default_dms_cluster
-                          typed_per_filter_config:
-                            envoy.filters.http.ext_authz:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                              disabled: true
-                            # envoy.filters.http.jwt_authn:
-                            #   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
-                            #   disabled: true
 
                     - name: vault
                       domains:
@@ -191,38 +201,6 @@ static_resources:
                             # envoy.filters.http.jwt_authn:
                             #   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
                             #   disabled: true
-
-                    - name: rabbitmq
-                      domains:
-                        - "rabbitmq.${DOMAIN}"
-                      routes:
-                        - match:
-                            prefix: "/"
-                          route:
-                            cluster: rabbitmq_api_cluster
-                          typed_per_filter_config:
-                            envoy.filters.http.ext_authz:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                              disabled: true
-                      request_headers_to_add:
-                        - header:
-                            key: "Authorization"
-                            value: "Basic Z3Vlc3Q6Z3Vlc3Q="
-                          append: false
-
-                    - name: rabbitmq-ui
-                      domains:
-                        - "ui-rabbitmq.${DOMAIN}"
-                      routes:
-                        - match:
-                            prefix: "/"
-                          route:
-                            cluster: rabbitmq_api_cluster
-                          typed_per_filter_config:
-                            envoy.filters.http.ext_authz:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                              disabled: true
-                          
 
                     - name: consul
                       domains:
@@ -256,7 +234,6 @@ static_resources:
                             # envoy.filters.http.jwt_authn:
                             #   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
                             #   disabled: true
-
 
                     - name: jaeger-tracing
                       domains:
@@ -309,16 +286,6 @@ static_resources:
                             headers: 
                               - name: ":authority"
                                 exact_match: "tracing.${DOMAIN}"
-                        - match:
-                            prefix: "/"
-                            headers: 
-                              - name: ":authority"
-                                exact_match: "rabbitmq.${DOMAIN}"
-                        - match:
-                            prefix: "/"
-                            headers: 
-                              - name: ":authority"
-                                exact_match: "ui-rabbitmq.${DOMAIN}"
                         - match:
                             prefix: "/api/devmanager/.well-known/est"
                         - match:
@@ -442,30 +409,40 @@ static_resources:
                   filename: /certs/upstream.crt
                 private_key:
                   filename: /certs/upstream.key
-          
-    - name: default_dms_cluster
+
+    - name: api_cloud_proxy_cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: default_dms_cluster
+        cluster_name: cloud_connector
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: lamassu-default-dms
-                      port_value: 5000
+                      address: cloud-proxy
+                      port_value: 8081
+      health_checks:
+        - interval: 60s
+          timeout: 2s
+          interval_jitter: 1s
+          unhealthy_threshold: 1
+          healthy_threshold: 1
+          http_health_check:
+            path: /v1/health
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          # mTLS config between API_GW and UPSTREAM Service
           common_tls_context:
             tls_certificates:
               - certificate_chain:
                   filename: /certs/upstream.crt
                 private_key:
                   filename: /certs/upstream.key
-
+          
     - name: ui_cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
@@ -546,27 +523,3 @@ static_resources:
                     socket_address:
                       address: jaeger
                       port_value: 16686
-
-    - name: rabbitmq_api_cluster
-      connect_timeout: 0.25s
-      type: STRICT_DNS
-      load_assignment:
-        cluster_name: rabbitmq_api_cluster
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: rabbitmq
-                      port_value: 15671
-      transport_socket:
-        name: envoy.transport_sockets.tls
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-          common_tls_context:
-            tls_certificates:
-              - certificate_chain:
-                  filename: /certs/upstream.crt
-                private_key:
-                  filename: /certs/upstream.key
-                

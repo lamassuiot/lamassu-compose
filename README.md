@@ -24,6 +24,15 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
 
 - `jq`. Get the latest version: https://stedolan.github.io/jq/download/ 
 - `docker` and `docker-compose`: Get the latest version: https://docs.docker.com/engine/install/ubuntu/ and https://docs.docker.com/compose/install/
+- Have a working DNS server able to resolve the domain used during the installation process or add the wollowing content to the `/etc/hosts` file, replacing the `dev.lamassu.io` domain with your own:
+
+    ```
+    127.0.0.1  dev.lamassu.io 
+    127.0.0.1  vault.dev.lamassu.io 
+    127.0.0.1  auth.dev.lamassu.io 
+    127.0.0.1  tracing.dev.lamassu.io 
+    127.0.0.1  consul.dev.lamassu.io 
+    ```
 
 ## Setup
 

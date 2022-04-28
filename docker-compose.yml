@@ -346,7 +346,7 @@ services:
       CONSUL_CA: /certs/ca.crt
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_DEFAULT_REGION: eu-west-1
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
       AWS_CA_BUNDLE: /certs/awsRootCA.pem
       AWS_SQS_QUEUE_NAME: lamassuCommand
       LAMASSU_CA_ADDRESS: https://lamassu-ca:8087

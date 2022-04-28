@@ -4,3 +4,4 @@ tls-certificates/**/*.crt
 tls-certificates/**/*.key
 tls-certificates/**/*.srl
 docker-compose-dev.yml
+downstream

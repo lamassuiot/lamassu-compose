@@ -36,8 +36,10 @@ CREATE TABLE public.device_logs (
 CREATE TABLE public.device_certificates_history (
     serial_number TEXT PRIMARY KEY,
     device_uuid TEXT,
+    status TEXT,
     issuer_name TEXT,
     creation_ts timestamp
+    revocation_ts timestamp
 );
 
 CREATE VIEW public.devices_certs AS (

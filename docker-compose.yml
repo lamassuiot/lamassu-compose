@@ -147,8 +147,8 @@ services:
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
       OCSP_URL: https://lamassu-ocsp:9098
       VAULT_ADDRESS: https://vault:8200
-      VAULT_ROLE_ID: 9b0230a6-6c11-4e97-4266-ba3dfafd4c0a
-      VAULT_SECRET_ID: 9ca91bf0-ee64-4518-14c4-ac537a2f0360
+      VAULT_ROLE_ID: <LAMASSU_CA_VAULT_ROLE_ID>
+      VAULT_SECRET_ID: <LAMASSU_CA_VAULT_SECRET_ID>
       VAULT_CA: /certs/vault.crt
       VAULT_PKI_CA_PATH: pki/lamassu/dev/
       VAULT_UNSEAL_KEYS_FILE: /config/vault-credentials.json

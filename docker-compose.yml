@@ -269,7 +269,7 @@ services:
        - 9098:9098
 
   rabbitmq:
-    image: lamassuiot/lamassu-rabbitmq:${LAMASSU_RABBITMQ_DOCKER_IMAGE}
+    image: ${LAMASSU_RABBITMQ_DOCKER_IMAGE}
     container_name: rabbitmq
     ports:
        - 5671:5671

@@ -150,6 +150,19 @@ static_resources:
                               disabled: true
                               
                         - match:
+                            prefix: "/api/ocsp/"
+                          route:
+                            prefix_rewrite: "/"
+                            cluster: ocsp_cluster
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                            envoy.filters.http.jwt_authn:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+                              disabled: true
+                              
+                        - match:
                             prefix: "/api/ca/"
                           route:
                             prefix_rewrite: "/"
@@ -523,3 +536,20 @@ static_resources:
                     socket_address:
                       address: jaeger
                       port_value: 16686
+
+    - name: ocsp_cluster
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      load_assignment:
+        cluster_name: ocsp_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ocsp
+                      port_value: 9098
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext

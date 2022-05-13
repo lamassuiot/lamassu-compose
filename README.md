@@ -41,24 +41,42 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
     git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
     ```
 
-2. Change the next secret environment variables in the `.env` file.
+2. Define the next secret environment variables by exporing the following variables.
     ```
-    DB_USER=<DB_USER> //Database user.
-    DB_PASSWORD=<DB_PASSWORD> //Database user password.
-    ```
-
-
-3. Define the domain to be used by chaning the DOMAIN in the `.env` file. By default it is set to `dev.lamassu.io`
-    ```
-    DOMAIN=dev.lamassu.io
+    export DB_USER=<DB_USER> //Database user.
+    export DB_PASSWORD=<DB_PASSWORD> //Database user password.
     ```
 
-4. Run the installer:
+3. Define the domain to be used by exporing the DOMAIN variable.
+    ```
+    export DOMAIN=dev.lamassu.io
+    ```
+
+4. Define the docker images tags to be used by exporting the following variables
+    ```
+    export LAMASSU_GATEWAY_DOCKER_IMAGE=lamasuiot/lamassu-gateway:latest
+    export LAMASSU_UI_DOCKER_IMAGE=lamasuiot/lamassu-ui:latest
+    export LAMASSU_DB_DOCKER_IMAGE=lamasuiot/lamassu-db:latest
+    export LAMASSU_AUTH_DOCKER_IMAGE=lamasuiot/lamassu-auth:latest
+    export LAMASSU_CA_DOCKER_IMAGE=lamasuiot/lamassu-ca:latest
+    export LAMASSU_DMS_ENROLLER_DOCKER_IMAGE=lamasuiot/lamassu-dms-enroller:latest
+    export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE=lamasuiot/lamassu-device-manager:latest
+    export LAMASSU_RABBITMQ_DOCKER_IMAGE=lamasuiot/lamassu-rabbitmq:latest
+    export LAMASSU_CLOUD_PROXY_DOCKER_IMAGE=lamasuiot/lamassu-cloud-proxy:latest
+    export LAMASSU_OCSP_DOCKER_IMAGE=lamasuiot/lamassu-ocsp:latest
+    ```
+
+5. Run the follwing command to replace `.env` file with the values defined varibales previously:
+    ```
+    envsubst < .env | tee .env
+    ```
+
+6. Run the installer:
     ```
     bash install.sh
     ```
 
-5. (OPTIONAL) Import your certificates:
+7. (OPTIONAL) Import your certificates:
 
     The `install.sh` script also generates self-signed for the downstream certificates. It is posible to provide other valid certificates by replacing the following files:
     ```
@@ -76,7 +94,7 @@ This repository contains the Docker compose files for deploying the [Lamassu](ht
     docker-compose up -d api-gateway dms-default
     ```
 
-6. Final notes:
+8. Final notes:
     
     🚀 You are ready to go 🚀
     
@@ -106,16 +124,34 @@ To launch Lamassu follow the next steps:
         git clone https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
         ```
 
-    2. Change the next secret environment variables in `.env` file.
+    2. Define the DB credentials variables used by the `.env` file.
         ```
-        DB_USER=<DB_USER> //Database user.
-        DB_PASSWORD=<DB_PASSWORD> //Database user password.
+        export DB_USER=<DB_USER> //Database user.
+        export DB_PASSWORD=<DB_PASSWORD> //Database user password.
         ```
 
-
-    3. Define the domain to be used by replacing the `.env` file.
+    3. Define the domain to be used by the `.env` file.
         ```
-        DOMAIN=dev.lamassu.io
+        export DOMAIN=dev.lamassu.io
+        ```
+
+    3. Define the docker images tags to be used by exporting the following variables
+        ```
+        export LAMASSU_GATEWAY_DOCKER_IMAGE=lamasuiot/lamassu-gateway:latest
+        export LAMASSU_UI_DOCKER_IMAGE=lamasuiot/lamassu-ui:latest
+        export LAMASSU_DB_DOCKER_IMAGE=lamasuiot/lamassu-db:latest
+        export LAMASSU_AUTH_DOCKER_IMAGE=lamasuiot/lamassu-auth:latest
+        export LAMASSU_CA_DOCKER_IMAGE=lamasuiot/lamassu-ca:latest
+        export LAMASSU_DMS_ENROLLER_DOCKER_IMAGE=lamasuiot/lamassu-dms-enroller:latest
+        export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE=lamasuiot/lamassu-device-manager:latest
+        export LAMASSU_RABBITMQ_DOCKER_IMAGE=lamasuiot/lamassu-rabbitmq:latest
+        export LAMASSU_CLOUD_PROXY_DOCKER_IMAGE=lamasuiot/lamassu-cloud-proxy:latest
+        export LAMASSU_OCSP_DOCKER_IMAGE=lamasuiot/lamassu-ocsp:latest
+        ```
+
+    4. Run the follwing command to replace `.env` file with the values defined varibales previously:
+        ```
+        envsubst < .env | tee .env
         ```
 
 

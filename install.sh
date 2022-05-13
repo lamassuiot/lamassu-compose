@@ -66,6 +66,8 @@ while [ $successful_vault_credentials == "false" ]; do
     fi
 done
 
+cat vault-credentials.json | jq .unseal_keys_hex -r > vault-ca-credentials.json
+
 export VAULT_TOKEN=$(cat vault-credentials.json | jq .root_token -r)
 export VAULT_ADDR=https://vault.$DOMAIN
 

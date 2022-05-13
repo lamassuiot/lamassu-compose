@@ -8,8 +8,7 @@ volumes:
 
 services:
   api-gateway:
-    image: lamassuiot/lamassu-gateway:${LAMASSU_GATEWAY_DOCKER_TAG}
-    # build: config/envoy
+    image: ${LAMASSU_GATEWAY_DOCKER_IMAGE}
     container_name: api-gateway 
     environment:
       DOMAIN: ${DOMAIN}
@@ -29,9 +28,7 @@ services:
       - jaeger
       
   lamassu-db:
-    image: lamassuiot/lamassu-db:${LAMASSU_DB_DOCKER_TAG}
-    # build:
-      # context: config/postgres
+    image: ${LAMASSU_DB_DOCKER_IMAGE}
     container_name: lamassu-db
     environment:
       POSTGRES_DB: postgres
@@ -69,9 +66,7 @@ services:
       - jaeger_tracing_data:/badger
   
   ui:
-    image: lamassuiot/lamassu-ui:${LAMASSU_UI_DOCKER_TAG}
-    # build:
-    #   context: ../lamassu/lamassu-ui-v2
+    image: ${LAMASSU_UI_DOCKER_IMAGE}
     container_name: lamassu-ui
     environment:
       DOMAIN: ${DOMAIN}
@@ -116,7 +111,7 @@ services:
       - consul-server
 
   auth:
-    image: lamassuiot/lamassu-auth:${LAMASSU_AUTH_DOCKER_TAG}
+    image: ${LAMASSU_AUTH_DOCKER_IMAGE}
     container_name: auth
     environment:
       DB_VENDOR: postgres
@@ -135,9 +130,7 @@ services:
       - lamassu-db
 
   lamassu-ca:
-    image: lamassuiot/lamassu-ca:${LAMASSU_CA_DOCKER_TAG}
-    # build:
-      # context: ../lamassu/lamassu-ca
+    image: ${LAMASSU_CA_DOCKER_IMAGE}
     container_name: lamassu-ca
     environment:
       DEBUG_MODE: debug
@@ -145,13 +138,19 @@ services:
       PROTOCOL: https
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      OCSP_URL: https://lamassu-ocsp:9098
+      OCSP_URL: https://${DOMAIN}/api/ocsp/
       VAULT_ADDRESS: https://vault:8200
       VAULT_ROLE_ID: <LAMASSU_CA_VAULT_ROLE_ID>
       VAULT_SECRET_ID: <LAMASSU_CA_VAULT_SECRET_ID>
       VAULT_CA: /certs/vault.crt
       VAULT_PKI_CA_PATH: pki/lamassu/dev/
       VAULT_UNSEAL_KEYS_FILE: /config/vault-credentials.json
+      POSTGRES_HOSTNAME: lamassu-db
+      POSTGRES_PORT: 5432
+      POSTGRES_CA_DB: ca
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_MIGRATIONS_FILE_PATH: /app/db/migrations
       CERT_FILE: /certs/tls.crt
       KEY_FILE: /certs/tls.key
       JAEGER_SERVICE_NAME: lamassu-ca
@@ -170,13 +169,11 @@ services:
       - ./tls-certificates/upstream/lamassu-ca/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/lamassu-ca/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
-      - ./vault-credentials.json:/config/vault-credentials.json
+      - ./vault-ca-credentials.json:/config/vault-credentials.json
     restart: on-failure
   
   lamassu-dms-enroller:
-    image: lamassuiot/lamassu-dms-enroller:${LAMASSU_DMS_ENROLLER_DOCKER_TAG}
-    # build:
-      # context: ../lamassu/lamassu-enroller
+    image: ${LAMASSU_DMS_ENROLLER_DOCKER_IMAGE}
     container_name: lamassu-dms-enroller
     environment:
       PORT: "8085"
@@ -191,7 +188,7 @@ services:
       POSTGRES_HOSTNAME: lamassu-db
       POSTGRES_PORT: 5432
       DEBUG_MODE: info
-      LAMASSU_CA_ADDRESS: https://lamassu-ca:8087
+      LAMASSU_CA_ADDRESS: lamassu-ca:8087
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       JAEGER_SERVICE_NAME: lamassu-dms-enroller
       JAEGER_AGENT_HOST: jaeger
@@ -209,15 +206,13 @@ services:
 
   lamassu-device-manager:
     container_name: "device-manager"
-    image: lamassuiot/lamassu-device-manager:${LAMASSU_DEVICE_MANAGER_DOCKER_TAG}
-    # build:
-      # context: ../lamassu/lamassu-device-manager
+    image: ${LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE}
     environment: 
       PORT: "8089"
       PROTOCOL: https
       CERT_FILE: /certs/tls.crt
       KEY_FILE: /certs/tls.key
-      LAMASSU_CA_ADDRESS: https://lamassu-ca:8087
+      LAMASSU_CA_ADDRESS: lamassu-ca:8087
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       DEBUG_MODE: debug
       POSTGRES_HOSTNAME: lamassu-db
@@ -245,31 +240,38 @@ services:
       - ./tls-certificates/upstream/lamassu-device-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
 
-  # ocsp:
-  #   build:
-  #     context: https://github.com/lamassuiot/GOCSP-responder.git#develop
-  #   environment:
-  #     RESPONDER_KEY: '${RESPONDER_KEY}'
-  #     RESPONDER_CERT: '${RESPONDER_CERT}'
-  #     RESPONDER_VAULT_ROLEID: '${CA_VAULTROLEID}'
-  #     RESPONDER_VAULT_SECRETID: '${CA_VAULTSECRETID}'
-  #     RESPONDER_VAULT_CA: '${RESPONDER_VAULTCA}'
-  #     RESPONDER_VAULT_ADDRESS: '${VAULT_API_ADDR}'
-  #     RESPONDER_PORT: '${RESPONDER_PORT}'
-  #     RESPONDER_CONSUL_PROTOCOL: '${CONSUL_PROTOCOL}'
-  #     RESPONDER_CONSUL_HOST: '${CONSUL_HOST}'
-  #     RESPONDER_CONSUL_PORT: '${CONSUL_HTTPS_PORT}'
-  #     RESPONDER_CONSUL_CA: '${RESPONDER_CONSUL_CA}'
-  #     JAEGER_SERVICE_NAME: '${RESPONDER_JAEGER_SERVICE_NAME}'
-  #     JAEGER_AGENT_HOST: '${JAEGER_AGENT_HOST}'
-  #     JAEGER_AGENT_PORT: '${JAEGER_AGENT_PORT}'
-  #   volumes:
-  #     - './lamassu/ocsp_certs:/certs'
-  #   ports:
-  #     - 9098:9098
+   ocsp:
+    container_name: ocsp
+    image: ${LAMASSU_OCSP_DOCKER_IMAGE}
+    environment:
+      SSL: "true"
+      CERT_FILE: /certs/tls.crt
+      KEY_FILE: /certs/tls.key
+      OCSP_SIGN_CERT: /certs/signer.crt
+      OCSP_SIGN_KEY: /certs/signer.key
+      PORT: "9098"
+      STRICT: "false"
+      LAMASSU_CA_ADDRESS: lamassu-ca:8087
+      LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
+      LAMASSU_CA_CLIENT_CERT_FILE: /certs/tls.crt
+      LAMASSU_CA_CLIENT_KEY_FILE: /certs/tls.key
+      JAEGER_SERVICE_NAME: ocsp
+      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_PORT: "6831"
+      JAEGER_SAMPLER_TYPE: const
+      JAEGER_SAMPLER_PARAM: "1"
+      JAEGER_REPORTER_LOG_SPANS: "false"
+     volumes:
+      - ./tls-certificates/upstream/ocsp/tls.crt:/certs/tls.crt
+      - ./tls-certificates/upstream/ocsp/tls.key:/certs/tls.key
+      - ./tls-certificates/downstream/tls.crt:/certs/signer.crt
+      - ./tls-certificates/downstream/tls.key:/certs/signer.key
+      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
+     ports:
+       - 9098:9098
 
   rabbitmq:
-    image: lamassuiot/lamassu-rabbitmq:${LAMASSU_RABBITMQ_DOCKER_TAG}
+    image: lamassuiot/lamassu-rabbitmq:${LAMASSU_RABBITMQ_DOCKER_IMAGE}
     container_name: rabbitmq
     ports:
        - 5671:5671
@@ -283,8 +285,7 @@ services:
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
   
   cloud-proxy:
-    image: lamassuiot/lamassu-cloud-proxy:${LAMASSU_CLOUD_PROXY_DOCKER_TAG}
-    # build: ../lamassu/lamassu-cloud-proxy
+    image: ${LAMASSU_CLOUD_PROXY_DOCKER_IMAGE}
     container_name: cloud-proxy
     environment:
       PORT: 8081
@@ -292,7 +293,7 @@ services:
       CERT_FILE: /certs/tls.crt
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
-      MUTUAL_TLS_CLIENT_CA: /certs/ca.crt
+      MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
       JAEGER_SERVICE_NAME: cloud-proxy
       JAEGER_AGENT_HOST: jaeger
       JAEGER_AGENT_PORT: "6831"
@@ -308,54 +309,20 @@ services:
       CONSUL_PROTOCOL: https
       CONSUL_HOST: consul-server
       CONSUL_PORT: 8501
-      CONSUL_CA: /certs/ca.crt
+      CONSUL_CA: /certs/internal-ca.crt
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_HOST: dev-lamassu.zpd.ikerlan.es
-      AMQP_SERVER_CA_CERT: /certs/ca.crt
+      AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       AMQP_CLIENT_CERT: /certs/amqp.crt
       AMQP_CLIENT_KEY: /certs/amqp.key
-      LAMASSU_CA_ADDRESS: https://lamassu-ca:8087
-      LAMASSU_CA_CERT_FILE: /certs/ca.crt
-      LAMASSU_CA_CLIENT_CERT_FILE: /certs/amqp.crt
-      LAMASSU_CA_CLIENT_KEY_FILE: /certs/amqp.key
-    volumes:
-      - ./tls-certificates/downstream/tls.crt:/certs/tls.crt
-      - ./tls-certificates/downstream/tls.key:/certs/tls.key
-      - ./tls-certificates/upstream/ca.crt:/certs/ca.crt
-      - ./tls-certificates/upstream/aws-connector/tls.crt:/certs/amqp.crt
-      - ./tls-certificates/upstream/aws-connector/tls.key:/certs/amqp.key
-
-  aws-connector:
-    build: ../lamassu/lamassu-aws-2/aws-connector
-    container_name: aws-connector
-    environment:
-      CONNECTOR_PORT: 8989
-      CONNECTOR_TYPE: aws
-      CONNECTOR_PROTOCOL: http
-      CONNECTOR_NAME: aws ikerlan
-      CONNECTOR_PERSISTENCE_DIR: /pv
-      JAEGER_SERVICE_NAME: aws-connector
-      JAEGER_AGENT_HOST: jaeger
-      JAEGER_AGENT_PORT: "6831"
-      JAEGER_SAMPLER_TYPE: const
-      JAEGER_SAMPLER_PARAM: "1"
-      JAEGER_REPORTER_LOG_SPANS: "false"
-      CONSUL_PROTOCOL: https
-      CONSUL_HOST: consul-server
-      CONSUL_PORT: 8501
-      CONSUL_CA: /certs/ca.crt
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
-      AWS_CA_BUNDLE: /certs/awsRootCA.pem
-      AWS_SQS_QUEUE_NAME: lamassuCommand
-      LAMASSU_CA_ADDRESS: https://lamassu-ca:8087
-      LAMASSU_CA_CERT_FILE: /certs/ca.crt
+      LAMASSU_CA_ADDRESS: lamassu-ca:8087
+      LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       LAMASSU_CA_CLIENT_CERT_FILE: /certs/tls.crt
       LAMASSU_CA_CLIENT_KEY_FILE: /certs/tls.key
     volumes:
-      - persistence_data:/pv
-      - ./tls-certificates/upstream/ca.crt:/certs/ca.crt
-      - ./tls-certificates/upstream/aws-connector/tls.crt:/certs/tls.crt
-      - ./tls-certificates/upstream/aws-connector/tls.key:/certs/tls.key
-      - ./tls-certificates/upstream/aws-connector/awsRootCA.pem:/certs/awsRootCA.pem
+      - ./tls-certificates/downstream/tls.crt:/certs/tls.crt
+      - ./tls-certificates/downstream/tls.key:/certs/tls.key
+      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
+      - ./tls-certificates/upstream/aws-connector/tls.crt:/certs/amqp.crt
+      - ./tls-certificates/upstream/aws-connector/tls.key:/certs/amqp.key
+

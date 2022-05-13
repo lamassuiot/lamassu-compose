@@ -1,7 +1,8 @@
 vault-credentials.json
-tls-certificates/**/*.csr
-tls-certificates/**/*.crt
-tls-certificates/**/*.key
-tls-certificates/**/*.srl
+*.csr
+*.crt
+*.pem
+*.key
+*.srl
 docker-compose-dev.yml
 downstream

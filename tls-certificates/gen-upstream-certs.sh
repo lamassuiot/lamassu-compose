@@ -18,6 +18,7 @@ generate vault
 generate consul-server
 generate auth
 generate ui
+generate ocsp
 generate lamassu-ca
 generate lamassu-dms-enroller
 generate lamassu-device-manager

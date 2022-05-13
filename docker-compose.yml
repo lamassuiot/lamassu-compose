@@ -223,8 +223,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_MIGRATIONS_FILE_PATH: /app/db/migrations
       MINIMUM_REENROLL_DAYS: ${DEVICE_MANAGER_MINIMUM_REENROLL_DAYS}
-      CA_CERT_FILE:  /certs/internal-ca.crt
-      CA_SERVER_ADDR: https://lamassu-ca:8087
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
       JAEGER_SERVICE_NAME: lamassu-device-manager

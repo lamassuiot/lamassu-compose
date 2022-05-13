@@ -17,8 +17,12 @@ echo "3) Launching Auth server"
 docker-compose up -d auth
 
 echo "4) Provisioning Auth server"
+
+echo "1"
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin > /dev/null 2>&1
+echo "2"
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator > /dev/null 2>&1
+echo "3"
 
 successful_auth_reload="false"
 expected_auth_reload=$(echo '{"outcome" : "success", "result" : null}' | jq -r)

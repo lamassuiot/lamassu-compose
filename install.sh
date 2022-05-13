@@ -44,6 +44,7 @@ docker-compose up -d vault consul-server api-gateway
 successful_vault_health="false"
 while [ $successful_vault_health == "false" ]; do
     vault_status=$(curl --silent -k https://vault.$DOMAIN/v1/sys/health)
+    echo $vault_status
     if jq -e . >/dev/null 2>&1 <<<"$vault_status"; then #Check if reload_status is json string
         echo $vault_status
         successful_vault_health="true"
@@ -56,10 +57,10 @@ echo "6) Initializing and provisioning vault"
 
 successful_vault_credentials="false"
 while [ $successful_vault_credentials == "false" ]; do
-    vault_status=$(docker-compose exec -T vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
-    echo $vault_status
-    if jq -e . >/dev/null 2>&1 <<<"$vault_status"; then #Check if reload_status is json string
-        echo $vault_status > vault-credentials.json
+    vault_creds=$(docker-compose exec -T vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
+    echo $vault_creds
+    if jq -e . >/dev/null 2>&1 <<<"$vault_creds"; then #Check if vault_status is json string
+        echo $vault_creds > vault-credentials.json
         successful_vault_credentials="true"
     else 
         sleep 5s

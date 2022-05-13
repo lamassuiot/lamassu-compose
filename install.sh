@@ -20,23 +20,15 @@ echo "4) Provisioning Auth server"
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin > /dev/null 2>&1
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator > /dev/null 2>&1
 
-echo "a"
 successful_auth_reload="false"
-echo "b"
 expected_auth_reload=$(echo '{"outcome" : "success", "result" : null}' | jq -r)
-echo "c"
 
 while [ $successful_auth_reload == "false" ]; do
 
-    echo "d1"
     reload_status=$(docker-compose exec -T auth /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload --output-json)
-    echo "e1"
     if jq -e . >/dev/null 2>&1 <<<"$reload_status"; then #Check if reload_status is json string
-        echo "f"
         reload_status=$(echo $reload_status | jq -r)
-        echo "g"
         if [ "$reload_status" == "$expected_auth_reload" ]; then
-            echo "h"
             successful_auth_reload="true"
         else
             sleep 3s
@@ -45,7 +37,6 @@ while [ $successful_auth_reload == "false" ]; do
         sleep 3s
     fi
 done
-echo "i"
 
 echo "5) Launching main services"
 docker-compose up -d vault consul-server api-gateway
@@ -65,7 +56,7 @@ echo "6) Initializing and provisioning vault"
 
 successful_vault_credentials="false"
 while [ $successful_vault_credentials == "false" ]; do
-    vault_status=$(docker-compose exec vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
+    vault_status=$(docker-compose exec -T vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
     echo $vault_status
     if jq -e . >/dev/null 2>&1 <<<"$vault_status"; then #Check if reload_status is json string
         echo $vault_status > vault-credentials.json

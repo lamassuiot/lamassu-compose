@@ -240,7 +240,7 @@ services:
       - ./tls-certificates/upstream/lamassu-device-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
 
-   ocsp:
+  ocsp:
     container_name: ocsp
     image: ${LAMASSU_OCSP_DOCKER_IMAGE}
     environment:
@@ -261,13 +261,13 @@ services:
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: "1"
       JAEGER_REPORTER_LOG_SPANS: "false"
-     volumes:
+    volumes:
       - ./tls-certificates/upstream/ocsp/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/ocsp/tls.key:/certs/tls.key
       - ./tls-certificates/downstream/tls.crt:/certs/signer.crt
       - ./tls-certificates/downstream/tls.key:/certs/signer.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
-     ports:
+    ports:
        - 9098:9098
 
   rabbitmq:

@@ -28,9 +28,9 @@ echo "c"
 
 while [ $successful_auth_reload == "false" ]; do
 
-    echo "d"
-    reload_status=$(docker-compose exec auth /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload --output-json)
-    echo "e"
+    echo "d1"
+    reload_status=$(docker-compose exec -T auth /opt/jboss/keycloak/bin/jboss-cli.sh --connect command=:reload --output-json)
+    echo "e1"
     if jq -e . >/dev/null 2>&1 <<<"$reload_status"; then #Check if reload_status is json string
         echo "f"
         reload_status=$(echo $reload_status | jq -r)

@@ -21,7 +21,7 @@ echo "4) Provisioning Auth server"
 auth_status="false"
 
 while [ $auth_status == "false" ]; do
-    auth_status=$(curl -k https://auth.dev-lamassu.zpd.ikerlan.es/auth/realms/lamassu)
+    auth_status=$(curl -k https://auth.$DOMAIN/auth/realms/lamassu)
     echo $auth_status
     if [[ $(echo $auth_status | jq .realm -r) == "lamassu" ]]; then
         auth_status="true"
@@ -29,6 +29,7 @@ while [ $auth_status == "false" ]; do
         sleep 5s
     fi
 done
+
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u enroller -p enroller --roles admin > /dev/null 2>&1
 docker-compose exec auth /opt/jboss/keycloak/bin/add-user-keycloak.sh -r lamassu -u operator -p operator --roles operator > /dev/null 2>&1
 

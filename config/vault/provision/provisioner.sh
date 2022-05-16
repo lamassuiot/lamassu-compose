@@ -24,14 +24,6 @@ provision sys/mounts/pki/lamassu/dev/_pki
 provision sys/mounts/pki/lamassu/dev/_internal
 provision sys/policy
 provision auth/approle/role
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA1-RSA4096/roles
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA1-RSA4096/root/generate
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA2-RSA2048/roles
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA2-RSA2048/root/generate
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA3-ECC384/roles
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA3-ECC384/root/generate
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA4-ECC256/roles
-provision pki/lamassu/dev/_pki/Lamassu-Root-CA4-ECC256/root/generate
 provision pki/lamassu/dev/_internal/Lamassu-DMS-Enroller/roles
 provision pki/lamassu/dev/_internal/Lamassu-DMS-Enroller/root/generate
 

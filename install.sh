@@ -18,13 +18,13 @@ docker-compose up -d auth
 
 echo "4) Provisioning Auth server"
 
-auth_status="false"
+successful_auth_status="false"
 
-while [ $auth_status == "false" ]; do
-    auth_status=$(curl -k https://auth.$DOMAIN/auth/realms/lamassu)
+while [ $successful_auth_status == "false" ]; do
+    auth_status=$(curl -k -s https://auth.$DOMAIN/auth/realms/lamassu)
     echo $auth_status
     if [[ $(echo $auth_status | jq .realm -r) == "lamassu" ]]; then
-        auth_status="true"
+        successful_auth_status="true"
     else 
         sleep 5s
     fi
@@ -124,10 +124,10 @@ echo "8) Create CAs"
 successful_ca_health="false"
 export AUTH_ADDR=auth.$DOMAIN
 while [ $successful_ca_health == "false" ]; do
-    export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
-    ca_status=$(curl -k --location --request GET "https://$DOMAIN/api/ca/v1/health" --header "Authorization: Bearer ${TOKEN}" --header 'Accept: application/json')
+    export TOKEN=$(curl -k -s --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
+    ca_status=$(curl -k -s --location --request GET "https://$DOMAIN/api/ca/v1/health" --header "Authorization: Bearer ${TOKEN}" --header 'Accept: application/json')
     echo $ca_status
-    if [[ $(echo $demo | jq .healthy -r) == "true" ]]; then
+    if [[ $(echo $ca_status | jq .healthy -r) == "true" ]]; then
         successful_ca_health="true"
     else 
         sleep 5s
@@ -137,12 +137,12 @@ done
 export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
 
 export CA_ADDR=$DOMAIN/api/ca
-export CREATE_CA_RESP=$(curl -k --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA4096" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuRSA4096\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 4096,\"type\": \"rsa\"}}")
+export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA4096" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuRSA4096\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 4096,\"type\": \"rsa\"}}")
 echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA2048" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuRSA2048\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 2048,\"type\": \"rsa\"}}")
+export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA2048" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuRSA2048\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 2048,\"type\": \"rsa\"}}")
 echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA384" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuECDSA384\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 384,\"type\": \"ec\"}}")
+export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA384" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuECDSA384\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 384,\"type\": \"ec\"}}")
 echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA256" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuECDSA256\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 256,\"type\": \"ec\"}}")
+export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA256" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\":\"262800\", \"enroller_ttl\":\"175200h\", \" subject\":{ \"common_name\": \"LamassuECDSA256\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 256,\"type\": \"ec\"}}")
 echo $CREATE_CA_RESP
 

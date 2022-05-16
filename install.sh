@@ -13,8 +13,9 @@ echo "2) Generating downstream certificates"
 bash gen-downstream-certs.sh > /dev/null 2>&1
 cd ..
 
-echo "3) Launching Auth server"
-docker-compose up -d auth
+echo "3) Launching Auth server and Api-Gateway"
+
+docker-compose up -d auth api-gateway
 
 echo "4) Provisioning Auth server"
 

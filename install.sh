@@ -116,7 +116,7 @@ touch lamassu-default-dms/config/dms.crt
 
 docker-compose up -d opa-server ui lamassu-dms-enroller lamassu-device-manager rabbitmq
 sleep 20s 
-docker-compose up -d lamassu-ca
+docker-compose up -d lamassu-ca ocsp
 
 sleep 5s 
 

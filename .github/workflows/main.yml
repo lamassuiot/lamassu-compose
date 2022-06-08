@@ -9,6 +9,7 @@ on:
       - config/rabbitmq/**
     branches:
       - master
+      - main
       
 jobs:
   build_auxiliar_compose_release:

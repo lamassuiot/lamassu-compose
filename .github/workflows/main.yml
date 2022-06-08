@@ -1,22 +1,18 @@
 name: Main Workflow
 
 on:
-  workflow_dispatch:
-    inputs:
-      tags:
-        description: 'Test scenario label'  
   push:
     paths:
       - .github/workflows/main.yml**
       - config/auth/**
       - config/envoy/**
       - config/rabbitmq/**
-      - config/postgres/**
     branches:
-      - develop
       - master
+      
 jobs:
-  build_gateway_release:
+  build_auxiliar_compose_release:
+    name: Build Auxilar Services
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,20 +46,6 @@ jobs:
           context: config/envoy
           push: true
           tags: lamassuiot/lamassu-gateway:latest
-
-      - name: Build lamassu-db Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: config/postgres
-          push: true
-          tags: lamassuiot/lamassu-db:${{ steps.tag_version.outputs.new_tag }}
-      
-      - name: Build lamassu-db Docker image using latest
-        uses: docker/build-push-action@v2
-        with:
-          context: config/postgres
-          push: true
-          tags: lamassuiot/lamassu-db:latest
       
       - name: Build lamassu-auth Docker image
         uses: docker/build-push-action@v2

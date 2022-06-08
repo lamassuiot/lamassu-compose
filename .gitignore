@@ -6,3 +6,4 @@ vault-credentials.json
 *.srl
 docker-compose-dev.yml
 downstream
+vault-ca-credentials.json

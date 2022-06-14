@@ -1,5 +1,10 @@
 version: '3'
 
+networks:
+  default:
+    name: lamassu-iot-network
+    external: true
+
 volumes:
   consul_server_data:
   postgres_db_data:

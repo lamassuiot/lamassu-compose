@@ -13,12 +13,13 @@ echo "2) Generating downstream certificates"
 bash gen-downstream-certs.sh > /dev/null 2>&1
 cd ..
 
-echo "3) Launching Auth server and Api-Gateway"
+echo "3) Generating the docker network"
+docker network create lamassu-iot-network -d bridge
 
+echo "4) Launching Auth server and Api-Gateway"
 docker-compose up -d auth api-gateway
 
-echo "4) Provisioning Auth server"
-
+echo "5) Provisioning Auth server"
 successful_auth_status="false"
 
 while [ $successful_auth_status == "false" ]; do
@@ -52,7 +53,7 @@ while [ $successful_auth_reload == "false" ]; do
     fi
 done
 
-echo "5) Launching main services"
+echo "6) Launching main services"
 docker-compose up -d vault consul-server api-gateway
 
 successful_vault_health="false"
@@ -67,7 +68,7 @@ while [ $successful_vault_health == "false" ]; do
     fi
 done
 
-echo "6) Initializing and provisioning vault"
+echo "7) Initializing and provisioning vault"
 
 successful_vault_credentials="false"
 while [ $successful_vault_credentials == "false" ]; do
@@ -107,7 +108,7 @@ export CA_VAULT_SECRETID=$(echo $CA_VAULT_SECRETID_RESP  | jq -r .data.secret_id
 sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' docker-compose.yml
 sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' docker-compose.yml
 
-echo "7) Launching remainig services"
+echo "8) Launching remainig services"
 
 mkdir -p lamassu-default-dms/devices-crypto-material
 mkdir -p lamassu-default-dms/config
@@ -120,7 +121,7 @@ docker-compose up -d
 
 sleep 5s 
 
-echo "8) Create CAs"
+echo "9) Create CAs"
 
 successful_ca_health="false"
 export AUTH_ADDR=auth.$DOMAIN

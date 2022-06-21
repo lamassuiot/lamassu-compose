@@ -1,5 +1,5 @@
 <a href="https://www.lamassu.io/">
-    <img src="assets/logo.png" alt="Lamassu logo" title="Lamassu" align="right" height="80" />
+     <img src="https://www.lamassu.io/assets/brand/lamassu-brand.png" alt="Lamassu logo" title="Lamassu" align="right" height="50" />
 </a>
 
 Lamassu Compose

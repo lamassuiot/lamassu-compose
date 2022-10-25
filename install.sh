@@ -1,4 +1,4 @@
-#!/bin/bash
+# #!/bin/bash
 
 echo "Insatlling Lamassu"
 
@@ -100,51 +100,15 @@ cd ../../../
 
 sleep 5s
 
-export CA_VAULT_ROLEID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id)
-export CA_VAULT_ROLEID=$(echo $CA_VAULT_ROLEID_RESP | jq -r .data.role_id)
-export CA_VAULT_SECRETID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id)
-export CA_VAULT_SECRETID=$(echo $CA_VAULT_SECRETID_RESP  | jq -r .data.secret_id)
+export CA_VAULT_ROLE_ID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/role-id)
+export CA_VAULT_ROLE_ID=$(echo $CA_VAULT_ROLE_ID_RESP | jq -r .data.role_id)
+export CA_VAULT_SECRET_ID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id)
+export CA_VAULT_SECRET_ID=$(echo $CA_VAULT_SECRET_ID_RESP  | jq -r .data.secret_id)
 
-sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' docker-compose.yml
-sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' docker-compose.yml
+envsubst < .env | tee .env
 
 echo "8) Launching remainig services"
 
-mkdir -p lamassu-default-dms/devices-crypto-material
-mkdir -p lamassu-default-dms/config
-touch lamassu-default-dms/config/dms.key
-touch lamassu-default-dms/config/dms.crt
-
-docker-compose up -d opa-server ui lamassu-dms-enroller lamassu-device-manager rabbitmq
+docker-compose up -d opa-server ui dms-manager device-manager rabbitmq
 sleep 20s 
 docker-compose up -d
-
-sleep 5s 
-
-echo "9) Create CAs"
-
-successful_ca_health="false"
-export AUTH_ADDR=auth.$DOMAIN
-while [ $successful_ca_health == "false" ]; do
-    export TOKEN=$(curl -k -s --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
-    ca_status=$(curl -k -s --location --request GET "https://$DOMAIN/api/ca/v1/health" --header "Authorization: Bearer ${TOKEN}" --header 'Accept: application/json')
-    echo $ca_status
-    if [[ $(echo $ca_status | jq .healthy -r) == "true" ]]; then
-        successful_ca_health="true"
-    else 
-        sleep 5s
-    fi
-done
-
-export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
-
-export CA_ADDR=$DOMAIN/api/ca
-export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA4096" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuRSA4096\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 4096,\"type\": \"RSA\"}}")
-echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA2048" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuRSA2048\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 2048,\"type\": \"RSA\"}}")
-echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA384" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuECDSA384\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 384,\"type\": \"EC\"}}")
-echo $CREATE_CA_RESP
-export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA256" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuECDSA256\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 256,\"type\": \"EC\"}}")
-echo $CREATE_CA_RESP
-

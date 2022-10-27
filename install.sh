@@ -1,25 +1,76 @@
 #!/bin/bash
+LAMASSU_COMPOSE_VERSION=v1.1.0
 
-echo "Insatlling Lamassu"
+echo ">> Insatlling Lamassu"
+
+if [[ -z "${DOMAIN}" ]]; then
+    echo "[WARN] DOMAIN env variable is not set. Using default"
+    export DOMAIN=dev.lamassu.io
+fi
+
+echo "Using domain: ${DOMAIN}"
+
+echo "1) Cloning Lamassu Compose"
+echo "using version $LAMASSU_COMPOSE_VERSION"
+git clone --branch $LAMASSU_COMPOSE_VERSION https://github.com/lamassuiot/lamassu-compose && cd lamassu-compose
+
+echo -e "\n2) Docker image versions used":
+export LAMASSU_GATEWAY_DOCKER_IMAGE=lamassuiot/lamassu-gateway:v1.0.17
+echo "LAMASSU_GATEWAY_DOCKER_IMAGE=$LAMASSU_GATEWAY_DOCKER_IMAGE"
+
+export LAMASSU_UI_DOCKER_IMAGE=lamassuiot/lamassu-ui:v0.0.17-main.4
+echo "LAMASSU_UI_DOCKER_IMAGE=$LAMASSU_UI_DOCKER_IMAGE"
+
+export LAMASSU_DB_DOCKER_IMAGE=lamassuiot/lamassu-db:v0.0.5
+echo "LAMASSU_DB_DOCKER_IMAGE=$LAMASSU_DB_DOCKER_IMAGE"
+
+export LAMASSU_AUTH_DOCKER_IMAGE=lamassuiot/lamassu-auth:v1.0.17
+echo "LAMASSU_AUTH_DOCKER_IMAGE=$LAMASSU_AUTH_DOCKER_IMAGE"
+
+export LAMASSU_CA_DOCKER_IMAGE=lamassuiot/lamassu-ca:v0.0.5
+echo "LAMASSU_CA_DOCKER_IMAGE=$LAMASSU_CA_DOCKER_IMAGE"
+
+export LAMASSU_DMS_ENROLLER_DOCKER_IMAGE=lamassuiot/lamassu-dms-enroller:v0.0.5
+echo "LAMASSU_DMS_ENROLLER_DOCKER_IMAGE=$LAMASSU_DMS_ENROLLER_DOCKER_IMAGE"
+
+export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE=lamassuiot/lamassu-device-manager:v0.0.5
+echo "LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE=$LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE"
+
+export LAMASSU_RABBITMQ_DOCKER_IMAGE=lamassuiot/lamassu-rabbitmq:v1.0.17
+echo "LAMASSU_RABBITMQ_DOCKER_IMAGE=$LAMASSU_RABBITMQ_DOCKER_IMAGE"
+
+export LAMASSU_CLOUD_PROXY_DOCKER_IMAGE=lamassuiot/lamassu-cloud-proxy:v0.0.5
+echo "LAMASSU_CLOUD_PROXY_DOCKER_IMAGE=$LAMASSU_CLOUD_PROXY_DOCKER_IMAGE"
+
+export LAMASSU_OCSP_DOCKER_IMAGE=lamassuiot/lamassu-ocsp:v0.0.5
+echo "LAMASSU_OCSP_DOCKER_IMAGE=$LAMASSU_OCSP_DOCKER_IMAGE"
+
+echo -e "\n3) Generating Databse credentials"
+
+export DB_USER=admin
+export DB_PASSWORD=$(cat /proc/sys/kernel/random/uuid | sed 's/[-]//g' | head -c 20; echo;)
+
+echo "DB_USER=$DB_USER"
+echo "DB_PASSWORD=$DB_PASSWORD"
 
 #Export .env variables
 export $(grep -v '^#' .env | xargs)
 
-echo "1) Generating upstream certificates"
+echo -e "\n4) Generating upstream certificates"
 cd tls-certificates
 bash gen-upstream-certs.sh > /dev/null 2>&1
 
-echo "2) Generating downstream certificates"
+echo -e "\n5) Generating downstream certificates"
 bash gen-downstream-certs.sh > /dev/null 2>&1
 cd ..
 
-echo "3) Generating the docker network"
+echo -e "\n6) Generating the docker network"
 docker network create lamassu-iot-network -d bridge
 
-echo "4) Launching Auth server and Api-Gateway"
+echo -e "\n7) Launching Auth server and Api-Gateway"
 docker-compose up -d auth api-gateway
 
-echo "5) Provisioning Auth server"
+echo -e "\n8) Provisioning Auth server"
 successful_auth_status="false"
 
 while [ $successful_auth_status == "false" ]; do
@@ -53,7 +104,7 @@ while [ $successful_auth_reload == "false" ]; do
     fi
 done
 
-echo "6) Launching main services"
+echo -e "\n9) Launching main services"
 docker-compose up -d vault consul-server api-gateway
 
 successful_vault_health="false"
@@ -68,7 +119,7 @@ while [ $successful_vault_health == "false" ]; do
     fi
 done
 
-echo "7) Initializing and provisioning vault"
+echo -e "\n10) Initializing and provisioning vault"
 
 successful_vault_credentials="false"
 while [ $successful_vault_credentials == "false" ]; do
@@ -108,7 +159,7 @@ export CA_VAULT_SECRETID=$(echo $CA_VAULT_SECRETID_RESP  | jq -r .data.secret_id
 sed -i 's/<LAMASSU_CA_VAULT_ROLE_ID>/'$CA_VAULT_ROLEID'/g' docker-compose.yml
 sed -i 's/<LAMASSU_CA_VAULT_SECRET_ID>/'$CA_VAULT_SECRETID'/g' docker-compose.yml
 
-echo "8) Launching remainig services"
+echo -e "\n11) Launching remainig services"
 
 mkdir -p lamassu-default-dms/devices-crypto-material
 mkdir -p lamassu-default-dms/config
@@ -121,7 +172,7 @@ docker-compose up -d
 
 sleep 5s 
 
-echo "9) Create CAs"
+echo -e "\n12) Create CAs"
 
 successful_ca_health="false"
 export AUTH_ADDR=auth.$DOMAIN
@@ -147,4 +198,3 @@ export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v
 echo $CREATE_CA_RESP
 export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuECDSA256" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuECDSA256\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 256,\"type\": \"EC\"}}")
 echo $CREATE_CA_RESP
-

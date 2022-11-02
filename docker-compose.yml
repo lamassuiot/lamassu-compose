@@ -265,7 +265,7 @@ services:
       CONSUL_HOST: consul-server
       CONSUL_PORT: 8501
       CONSUL_CA: /certs/internal-ca.crt
-      LAMASSU_CA_ADDRESS: ca:8087
+      LAMASSU_CA_ADDRESS: ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       LAMASSU_CONNECTORS_MUTUAL_TLS: "true"
       LAMASSU_CONNECTORS_CERT_FILE: /certs/internal-ca.crt

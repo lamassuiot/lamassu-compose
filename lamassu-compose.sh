@@ -112,7 +112,7 @@ git clone --branch $LAMASSU_COMPOSE_GITHUB_TAG https://github.com/lamassuiot/lam
 cd lamassu-compose
 
 export LAMASSU_UI_DOCKER_IMAGE="lamassuiot/lamassu-ui:1.1.0"
-export LAMASSU_DMS_ENROLLER_DOCKER_IMAGE="lamassuiot/lamassu-dms-enroller-dev:latest"
+export LAMASSU_DMS_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-dms-enroller-dev:latest"
 export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-device-manager-dev:latest"
 export LAMASSU_DB_DOCKER_IMAGE="lamassuiot/lamassu-db-dev:latest"
 export LAMASSU_CA_DOCKER_IMAGE="lamassuiot/lamassu-ca-dev:latest"

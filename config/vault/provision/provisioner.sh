@@ -20,8 +20,6 @@ function provision() {
 pushd data > /dev/null
 
 provision sys/auth
-provision sys/mounts/pki/lamassu/dev/_pki
-provision sys/mounts/pki/lamassu/dev/_internal
 provision sys/policy
 provision auth/approle/role
 

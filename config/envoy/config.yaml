@@ -346,7 +346,7 @@ static_resources:
                   address:
                     socket_address:
                       address: ca
-                      port_value: 8087
+                      port_value: 8085
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -379,7 +379,7 @@ static_resources:
                   address:
                     socket_address:
                       address: device-manager
-                      port_value: 8089
+                      port_value: 8085
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -445,7 +445,7 @@ static_resources:
                   address:
                     socket_address:
                       address: cloud-proxy
-                      port_value: 8081
+                      port_value: 8085
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -478,7 +478,7 @@ static_resources:
                   address:
                     socket_address:
                       address: alerts
-                      port_value: 8088
+                      port_value: 8085
 
       health_checks:
         - interval: 60s
@@ -592,7 +592,7 @@ static_resources:
                   address:
                     socket_address:
                       address: ocsp
-                      port_value: 9098
+                      port_value: 8085
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:

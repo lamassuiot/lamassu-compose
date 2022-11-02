@@ -16,6 +16,12 @@ while test $# -gt 0; do
     -d|--domain)
       export DOMAIN=$2
       shift;;
+    --compose-version)
+      export LAMASSU_COMPOSE_GITHUB_TAG=$2
+      shift;;
+    --simulation-version)
+      export LAMASSU_SIMULATION_TOOLS_GITHUB_TAG=$2
+      shift;;
     -w|--with-simulators)
       install_simulator=1
       shift;;

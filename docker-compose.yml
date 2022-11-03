@@ -230,8 +230,8 @@ services:
     container_name: alerts
     environment:
       SERVICE_NAME: alerts
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: alerts
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
@@ -256,8 +256,8 @@ services:
     container_name: cloud-proxy
     environment:
       SERVICE_NAME: cloud-proxy
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: cloudproxy
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432

@@ -1,4 +1,5 @@
 #!/bin/bash
+
 LAMASSU_COMPOSE_GITHUB_TAG=v1.1.0
 LAMASSU_SIMULATION_TOOLS_GITHUB_TAG=b669c23
 
@@ -10,6 +11,20 @@ NOCOLOR='\033[0m'
 
 install_simulator=0
 domain=dev.lamassu.io
+
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run as root using sudo"
+  exit 1
+fi
+
+function chek_if_json(){
+    stringToCheck="$1"
+    if jq -e . >/dev/null 2>&1 <<<$stringToCheck && [[ "$stringToCheck" != "" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
 while test $# -gt 0; do
   case "$1" in
@@ -68,7 +83,7 @@ function exit_if_command_not_installed(){
     is_command_installed $1
     if [ $? -eq 0 ]; then
         echo "✅ $1"
-    else 
+    else
         echo "$1: Not detected. Exiting"
         exit 1
     fi
@@ -94,8 +109,7 @@ function exit_if_cant_resolve_domain(){
     if [ -n "$ip" ]; then
         echo "✅ $1"
     else
-        echo -e "${RED}$1: Not resolved. Exiting"
-        exit 1
+        echo "127.0.0.1     $hostname" >> /etc/hosts
     fi
 }
 
@@ -106,12 +120,11 @@ exit_if_cant_resolve_domain auth.$DOMAIN
 exit_if_cant_resolve_domain vault.$DOMAIN
 
 
-echo -e "\n3) Cloning Lamassu Compose"
-echo "using version $LAMASSU_COMPOSE_GITHUB_TAG"
-git clone --branch $LAMASSU_COMPOSE_GITHUB_TAG https://github.com/lamassuiot/lamassu-compose > /dev/null
+echo -e "\n${BLUE}3) Cloning Lamassu Compose${NOCOLOR}"
+git clone --quiet --branch $LAMASSU_COMPOSE_GITHUB_TAG https://github.com/lamassuiot/lamassu-compose > /dev/null
 cd lamassu-compose
 
-export LAMASSU_UI_DOCKER_IMAGE="lamassuiot/lamassu-ui:1.1.0"
+export LAMASSU_UI_DOCKER_IMAGE="lamassuiot/lamassu-ui-dev:latest"
 export LAMASSU_DMS_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-dms-enroller-dev:latest"
 export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-device-manager-dev:latest"
 export LAMASSU_DB_DOCKER_IMAGE="lamassuiot/lamassu-db-dev:latest"
@@ -123,7 +136,7 @@ export LAMASSU_GATEWAY_DOCKER_IMAGE="lamassuiot/lamassu-gateway-dev:latest"
 export LAMASSU_AUTH_DOCKER_IMAGE="lamassuiot/lamassu-auth-dev:latest"
 export LAMASSU_RABBITMQ_DOCKER_IMAGE="lamassuiot/lamassu-rabbitmq-dev:latest"
 
-echo -e "\n4) Generating Databse credentials"
+echo -e "\n${BLUE}4) Generating Databse credentials${NOCOLOR}"
 
 export DB_USER=admin
 export DB_PASSWORD=$(cat /proc/sys/kernel/random/uuid | sed 's/[-]//g' | head -c 10; echo;)
@@ -134,27 +147,32 @@ echo "DB_PASSWORD=$DB_PASSWORD"
 #Export .env variables
 envsubst < .env | tee .env  > /dev/null
 
-echo -e "\n5) Generating upstream certificates"
+echo -e "\n${BLUE}5) Generating upstream certificates${NOCOLOR}"
 cd tls-certificates
 bash gen-upstream-certs.sh > /dev/null 2>&1
 
-echo -e "\n6) Generating downstream certificates"
+echo -e "\n${BLUE}6) Generating downstream certificates${NOCOLOR}"
 bash gen-downstream-certs.sh > /dev/null 2>&1
 cd ..
 
-echo -e "\n7) Generating the docker network"
+echo -e "\n${BLUE}7) Generating the docker network${NOCOLOR}"
 docker network create lamassu-iot-network -d bridge
 
-echo -e "\n8) Launching Auth server and API-Gateway"
+echo -e "\n${BLUE}8) Launching Auth server and API-Gateway${NOCOLOR}"
 docker-compose up -d auth api-gateway
 
-echo -e "\n9) Provisioning Auth server"
+echo -e "\n${BLUE}9) Provisioning Auth server${NOCOLOR}"
 successful_auth_status="false"
 
 while [ $successful_auth_status == "false" ]; do
     auth_status=$(curl -k -s https://auth.$DOMAIN/auth/realms/lamassu)
-    if [[ $(echo $auth_status | jq .realm -r) == "lamassu" ]]; then
-        successful_auth_status="true"
+    chek_if_json $auth_status
+    if [ $? -eq 0 ]; then
+        if [[ $(echo $auth_status | jq .realm -r) == "lamassu" ]]; then
+            successful_auth_status="true"
+        else
+            sleep 5s
+        fi
     else
         sleep 5s
     fi
@@ -180,27 +198,27 @@ while [ $successful_auth_reload == "false" ]; do
     fi
 done
 
-echo -e "\n10) Launching main services"
+echo -e "\n${BLUE}10) Launching main services${NOCOLOR}"
 docker-compose up -d vault consul-server api-gateway
 
 successful_vault_health="false"
 while [ $successful_vault_health == "false" ]; do
     vault_status=$(curl --silent -k https://vault.$DOMAIN/v1/sys/health)
-    if jq -e . >/dev/null 2>&1 <<<"$vault_status" && [[ "$vault_status" != "" ]]; then #Check if reload_status is json string
-        echo $vault_status
+    chek_if_json $vault_status
+    if [ $? -eq 0 ]; then
         successful_vault_health="true"
     else
         sleep 5s
     fi
 done
 
-echo -e "\n11) Initializing and provisioning vault"
+echo -e "\n${BLUE}11) Initializing and provisioning vault${NOCOLOR}"
 
 successful_vault_credentials="false"
 while [ $successful_vault_credentials == "false" ]; do
     vault_creds=$(docker-compose exec -T vault vault operator init -key-shares=5 -key-threshold=3 -tls-skip-verify -format=json)
-    echo $vault_creds
-    if jq -e . >/dev/null 2>&1 <<<"$vault_creds" && [[ "$vault_creds" != "" ]]; then #Check if reload_status is json string
+    chek_if_json "$vault_creds"
+    if [ $? -eq 0 ]; then
         echo $vault_creds > vault-credentials.json
         successful_vault_credentials="true"
     else
@@ -231,26 +249,28 @@ export CA_VAULT_ROLE_ID=$(echo $CA_VAULT_ROLE_ID_RESP | jq -r .data.role_id)
 export CA_VAULT_SECRET_ID_RESP=$(curl -k --header "X-Vault-Token: ${VAULT_TOKEN}" --request POST ${VAULT_ADDR}/v1/auth/approle/role/lamassu-ca-role/secret-id)
 export CA_VAULT_SECRET_ID=$(echo $CA_VAULT_SECRET_ID_RESP  | jq -r .data.secret_id)
 
+echo -e "\n" >> .env
 echo "CA_VAULT_ROLE_ID=${CA_VAULT_ROLE_ID}" >> .env
 echo "CA_VAULT_SECRET_ID=${CA_VAULT_SECRET_ID}" >> .env
 
-echo -e "\n12) Launching remainig services"
+echo -e "\n${BLUE}12) Launching remainig services${NOCOLOR}"
 
-docker-compose up -d opa-server ui lamassu-dms-enroller lamassu-device-manager rabbitmq
+docker-compose up -d opa-server ui dms-manager device-manager rabbitmq
 sleep 20s
 docker-compose up -d
 
 sleep 5s
 
-echo -e "\n13) Create CAs"
+echo -e "\n${BLUE}13) Create CAs${NOCOLOR}"
 
 successful_ca_health="false"
 export AUTH_ADDR=auth.$DOMAIN
 while [ $successful_ca_health == "false" ]; do
     export TOKEN=$(curl -k -s --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
     ca_status=$(curl -k -s --location --request GET "https://$DOMAIN/api/ca/v1/health" --header "Authorization: Bearer ${TOKEN}" --header 'Accept: application/json')
-    echo $ca_status
-    if [[ $(echo $ca_status | jq .healthy -r) == "true" ]]; then
+    
+    chek_if_json "$ca_status"
+    if [ $? -eq 0 ]; then
         successful_ca_health="true"
     else
         sleep 5s
@@ -262,11 +282,13 @@ export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms
 export CA_ADDR=$DOMAIN/api/ca
 export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA4096" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuRSA4096\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 4096,\"type\": \"RSA\"}}")
 echo $CREATE_CA_RESP
+cd ..
 
 if [ $install_simulator -eq 1 ]; then
-    echo -e "\n14) Installing simulation tools"
+    echo -e "\n${BLUE}14) Installing simulation tools${NOCOLOR}"
+
     echo "using version $LAMASSU_SIMULATION_TOOLS_GITHUB_TAG"
-    git clone --branch $LAMASSU_SIMULATION_TOOLS_GITHUB_TAG https://github.com/lamassuiot/lamassu-simulation-tools > /dev/null
+    git clone --quiet --branch $LAMASSU_SIMULATION_TOOLS_GITHUB_TAG https://github.com/lamassuiot/lamassu-simulation-tools > /dev/null
     cd lamassu-simulation-tools
 
     export LAMASSU_GATEWAY=https://${DOMAIN}

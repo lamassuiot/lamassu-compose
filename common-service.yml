@@ -3,7 +3,7 @@ version: '3'
 services:
   base-service:
     environment:
-      DEBUG_MODE: "true"
+      DEBUG_MODE: ${DEBUG_MODE}
       PORT: 8085
       PROTOCOL: https
       CERT_FILE: /certs/tls.crt

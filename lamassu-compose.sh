@@ -280,7 +280,7 @@ done
 export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms/lamassu/protocol/openid-connect/token" --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'client_id=frontend' --data-urlencode 'username=enroller' --data-urlencode 'password=enroller' | jq -r .access_token)
 
 export CA_ADDR=$DOMAIN/api/ca
-export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki/LamassuRSA4096" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"ca_ttl\": 262800, \"enroller_ttl\": 175200, \"subject\":{ \"common_name\": \"LamassuRSA4096\",\"country\": \"ES\",\"locality\": \"Arrasate\",\"organization\": \"LKS Next, S. Coop\",\"state\": \"Gipuzkoa\"},\"key_metadata\":{\"bits\": 4096,\"type\": \"RSA\"}}")
+export CREATE_CA_RESP=$(curl -k -s --location --request POST "https://$CA_ADDR/v1/pki" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "curl -k --request POST "https://$CA_ADDR/v1/pki" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"subject\":{\"country\":\"ES\",\"state\":\"Gipuzkoa\",\"locality\":\"Donostia\",\"organization\":\"Lamassu\",\"organization_unit\":\"IoT\",\"common_name\":\"LamassuRSA3072\"},\"key_metadata\":{\"type\":\"RSA\",\"bits\":3072},\"ca_duration\":31536000,\"issuance_duration\":8640000}" -v")
 echo $CREATE_CA_RESP
 cd ..
 

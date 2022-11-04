@@ -16,7 +16,7 @@ services:
     container_name: api-gateway 
     environment:
       DOMAIN: ${DOMAIN}
-      DEBUG_MODE: "true"
+      DEBUG_MODE: ${DEBUG_MODE}
     ports:
       - 80:80
       - 443:443

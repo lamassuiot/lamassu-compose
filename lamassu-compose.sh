@@ -10,6 +10,7 @@ GREEN='\033[0;32m'
 NOCOLOR='\033[0m'
 
 install_simulator=0
+install_ca=0
 domain=dev.lamassu.io
 
 if [ "$EUID" -ne 0 ]; then
@@ -40,6 +41,9 @@ while test $# -gt 0; do
     -w|--with-simulators)
       install_simulator=1
       shift;;
+    -ca|--with-ca)
+      install_ca=1
+      shift;;
     --)
       break;;
      *)
@@ -63,6 +67,9 @@ echo -e "DOMAIN: $DOMAIN"
 echo -e "\n${GREEN}Addons:${NOCOLOR}"
 if [ $install_simulator -eq 1 ]; then
 echo -e "SIMULATION_TOOLS"
+fi
+if [ $install_ca -eq 1 ]; then
+echo -e "DEFAULT_CA"
 fi
 
 echo -e "${BLUE}==================================${NOCOLOR}"
@@ -261,6 +268,7 @@ docker-compose up -d
 
 sleep 5s
 
+if [ $install_ca -eq 1 ]; then
 echo -e "\n${BLUE}13) Create CAs${NOCOLOR}"
 
 successful_ca_health="false"
@@ -282,6 +290,8 @@ export TOKEN=$(curl -k --location --request POST "https://$AUTH_ADDR/auth/realms
 export CA_ADDR=$DOMAIN/api/ca
 export CREATE_CA_RESP=$(curl -k --silent --request POST "https://$CA_ADDR/v1/pki" --header "Authorization: Bearer ${TOKEN}" --header 'Content-Type: application/json' --data-raw "{\"subject\":{\"country\":\"ES\",\"state\":\"Gipuzkoa\",\"locality\":\"Donostia\",\"organization\":\"Lamassu\",\"organization_unit\":\"IoT\",\"common_name\":\"LamassuRSA3072\"},\"key_metadata\":{\"type\":\"RSA\",\"bits\":3072},\"ca_duration\":31536000,\"issuance_duration\":8640000}")
 echo $CREATE_CA_RESP
+fi
+
 cd ..
 
 if [ $install_simulator -eq 1 ]; then

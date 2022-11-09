@@ -10,11 +10,29 @@ jobs:
     name: Install Lamassu
     runs-on: ubuntu-latest
     steps:
-      - name: Install Compose
-        uses: ndeloof/install-compose-action@main
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          legacy: true    # will also install in PATH as `docker-compose`
-      - name: Install Lamassu
+          go-version: 1.19
+      - name: Install dependencies
         run: |
-          curl -fsSL https://raw.githubusercontent.com/lamassuiot/lamassu-compose/develop/lamassu-compose.sh -o lamassu-compose.sh
-          sudo bash lamassu-compose.sh --domain dev.lamassu.io --compose-version develop
+          go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.4.1
+          go get github.com/lamassuiot/lamassuiot/pkg/ca/client@latest
+      #- name: Install Compose
+      #  uses: ndeloof/install-compose-action@main
+      #  with:
+     #     legacy: true    # will also install in PATH as `docker-compose`
+      #- name: Install Lamassu
+      #  run: |
+      #    curl -fsSL https://raw.githubusercontent.com/lamassuiot/lamassu-compose/develop/lamassu-compose.sh -o lamassu-compose.sh
+      #    sudo bash lamassu-compose.sh --domain dev.lamassu.io --compose-version develop
+      - name: OCSP Tests
+          # go mod init
+          # go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@v2.3.1
+        run: |
+          cd /home/runner/work/lamassu-compose/lamassu-compose/.github
+          go mod download          
+          go test -json -v ./test/ocsp/ocsp_test.go -args -domain=dev.lamassu.io -cert=/home/ubuntu/lamassu-compose/tls-certificates/downstream/tls.crt | gotestfmt
+

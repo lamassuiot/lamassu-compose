@@ -1,0 +1,20 @@
+name: Release Workflow
+
+on:
+  push:
+    branches:
+      - wf-test
+
+jobs:
+  install_lamassu:
+    name: Install Lamassu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Compose
+        uses: ndeloof/install-compose-action@main
+        with:
+          legacy: true    # will also install in PATH as `docker-compose`
+      - name: Install Lamassu
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/lamassuiot/lamassu-compose/develop/lamassu-compose.sh -o lamassu-compose.sh
+          sudo bash lamassu-compose.sh --domain dev.lamassu.io --compose-version develop

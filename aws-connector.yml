@@ -19,6 +19,18 @@ services:
     image: ${LAMASSU_AWS_CONNECTOR_DOCKER_IMAGE}
     environment:
       SERVICE_NAME: aws-connector
+      DEBUG_MODE: ${DEBUG_MODE}
+      PORT: 8085
+      PROTOCOL: https
+      CERT_FILE: /certs/tls.crt
+      KEY_FILE: /certs/tls.key
+      MUTUAL_TLS_ENABLED: "true"
+      MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
+      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_PORT: 5671
+      AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
+      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
+      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
       LAMASSU_CA_ADDRESS: ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       CONNECTOR_TYPE: aws
@@ -36,4 +48,5 @@ services:
       - aws_data:/app/pv
       - ./tls-certificates/upstream/aws-connector/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/aws-connector/tls.key:/certs/tls.key
+      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure

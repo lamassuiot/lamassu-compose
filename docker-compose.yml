@@ -30,6 +30,11 @@ services:
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
     depends_on:
       - jaeger
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
       
   database:
     image: ${LAMASSU_DB_DOCKER_IMAGE}
@@ -42,6 +47,11 @@ services:
     #   - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   opa-server:
     image: openpolicyagent/opa:0.37.1-envoy
@@ -58,6 +68,11 @@ services:
       - "--log-format=text"
       - "--ignore=.*"
       - "/opa/policy.rego"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   jaeger:
     image: jaegertracing/all-in-one:1.30.0
@@ -70,6 +85,11 @@ services:
       - jaeger_tracing_data:/badger
     # ports:
     #   - 14268:14268
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   ui:
     image: ${LAMASSU_UI_DOCKER_IMAGE}
@@ -87,6 +107,11 @@ services:
       - ./tls-certificates/upstream/ui/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/ui/tls.key:/certs/tls.key
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   consul-server:
     image: consul:1.9
@@ -101,6 +126,11 @@ services:
       - ./tls-certificates/upstream/consul-server/tls.crt:/consul/tls/tls.crt
       - ./tls-certificates/upstream/consul-server/tls.key:/consul/tls/tls.key
     command: consul agent -server -bootstrap-expect=1 -data-dir /consul/data -config-dir /consul/config
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   vault:
     image: vault:1.7.3
@@ -115,6 +145,11 @@ services:
       - IPC_LOCK
     depends_on: 
       - consul-server
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   auth:
     image: ${LAMASSU_AUTH_DOCKER_IMAGE}
@@ -135,6 +170,11 @@ services:
     depends_on:
       - database
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   ca:
     image: ${LAMASSU_CA_DOCKER_IMAGE}
@@ -173,6 +213,11 @@ services:
       - ./vault-ca-credentials.json:/config/vault-credentials.json
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
   
   dms-manager:
     image: ${LAMASSU_DMS_MANAGER_DOCKER_IMAGE}
@@ -203,6 +248,11 @@ services:
       - ./tls-certificates/upstream/dms-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   device-manager:
     container_name: device-manager
@@ -236,6 +286,11 @@ services:
       - ./tls-certificates/upstream/device-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   ocsp:
     container_name: ocsp
@@ -265,6 +320,11 @@ services:
       - ./tls-certificates/downstream/tls.key:/certs/signer.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   alerts:
     image: ${LAMASSU_ALERTS_DOCKER_IMAGE}
@@ -302,6 +362,11 @@ services:
       - ./tls-certificates/upstream/alerts/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   cloud-proxy:
     image: ${LAMASSU_CLOUD_PROXY_DOCKER_IMAGE}
@@ -338,6 +403,11 @@ services:
       - ./tls-certificates/upstream/cloud-proxy/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}
 
   rabbitmq:
     image: ${LAMASSU_RABBITMQ_DOCKER_IMAGE}
@@ -352,3 +422,8 @@ services:
       - ./tls-certificates/upstream/rabbitmq/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
       - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-file: ${MAX_LOG_FILES}
+        max-size: ${MAX_LOG_FILE_SIZE}

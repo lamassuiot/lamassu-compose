@@ -13,15 +13,19 @@ function generate() {
     openssl x509 -req -extfile <(printf "subjectAltName=DNS:$1") -in upstream/$1/tls.csr -days 365 -CA upstream/ca.crt -CAkey upstream/ca.key -CAcreateserial -out upstream/$1/tls.crt
 }
 
+generate ca
+generate dms-manager
+generate device-manager
+generate ocsp
+generate alerts
+generate cloud-proxy
+
 generate api-gateway
 generate vault
 generate consul-server
 generate auth
 generate ui
-generate ocsp
-generate lamassu-ca
-generate lamassu-dms-enroller
-generate lamassu-device-manager
-generate lamassu-default-dms
 generate rabbitmq
+
 generate aws-connector
+generate azure-connector

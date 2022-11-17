@@ -40,26 +40,6 @@ static_resources:
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
                 generate_request_id: true
-                tracing:
-                  provider:
-                    name: envoy.tracers.dynamic_ot
-                    typed_config:
-                      "@type": type.googleapis.com/envoy.config.trace.v3.DynamicOtConfig
-                      library: /usr/local/lib/libjaegertracing_plugin.so
-                      config:
-                        service_name: gateway
-                        sampler:
-                          type: const
-                          param: 1
-                        reporter:
-                          localAgentHostPort: jaeger:6831
-                        headers:
-                          jaegerDebugHeader: jaeger-debug-id  
-                          jaegerBaggageHeader: jaeger-baggage
-                          traceBaggageHeaderPrefix: uberctx-
-                        baggage_restrictions:
-                          denyBaggageOnInitializationFailure: false
-                          hostPort: ""
                 stat_prefix: ingress_http
                 forward_client_cert_details: "APPEND_FORWARD"
                 set_current_client_cert_details: 
@@ -250,22 +230,6 @@ static_resources:
                             prefix: "/"
                           route:
                             cluster: auth_cluster
-                          typed_per_filter_config:
-                            envoy.filters.http.ext_authz:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                              disabled: true
-                            # envoy.filters.http.jwt_authn:
-                            #   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
-                            #   disabled: true
-
-                    - name: jaeger-tracing
-                      domains:
-                        - "tracing.${DOMAIN}"
-                      routes:
-                        - match:
-                            prefix: "/"
-                          route:
-                            cluster: jaeger_ui_cluster
                           typed_per_filter_config:
                             envoy.filters.http.ext_authz:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -567,19 +531,6 @@ static_resources:
         name: envoy.transport_sockets.tls
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-
-    - name: jaeger_ui_cluster
-      connect_timeout: 0.25s
-      type: STRICT_DNS
-      load_assignment:
-        cluster_name: jaeger_ui_cluster
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: jaeger
-                      port_value: 16686
 
     - name: ocsp_cluster
       connect_timeout: 0.25s

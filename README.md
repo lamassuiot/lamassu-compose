@@ -6,4 +6,4 @@ Lamassu Compose
 ===================
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-blue.svg)](http://www.mozilla.org/MPL/2.0/index.txt)
 
-Check out the [docs](https://www.lamassu.io) to get started with the Lamassu
+Check out the [docs](https://www.lamassu.io/docs/latest/) to get started with the Lamassu

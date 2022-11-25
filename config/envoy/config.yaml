@@ -55,7 +55,7 @@ static_resources:
                   virtual_hosts:
                     - name: apis_ui
                       domains:
-                        - ${DOMAIN}
+                        - "*"
                       routes:
                         - match:
                             safe_regex:
@@ -191,7 +191,7 @@ static_resources:
 
                     - name: vault
                       domains:
-                        - "vault.${DOMAIN}"
+                        - "vault.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -207,7 +207,7 @@ static_resources:
 
                     - name: consul
                       domains:
-                        - "consul.${DOMAIN}"
+                        - "consul.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -224,7 +224,7 @@ static_resources:
 
                     - name: auth
                       domains:
-                        - "auth.${DOMAIN}"
+                        - "auth.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -272,7 +272,7 @@ static_resources:
                             prefix: "/"
                             headers: 
                               - name: ":authority"
-                                exact_match: "tracing.${DOMAIN}"
+                                exact_match: "tracing.*"
                         - match:
                             prefix: "/api/devmanager/.well-known/est"
                         - match:

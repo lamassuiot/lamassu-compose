@@ -188,7 +188,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
@@ -231,7 +232,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
@@ -266,7 +268,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
@@ -304,7 +307,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
@@ -338,7 +342,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
@@ -380,7 +385,8 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}

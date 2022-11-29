@@ -207,6 +207,7 @@ services:
       POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       ENGINE: vault
+      ABOUT_TO_EXPIRE_DAYS: "90"
     volumes:
       - ./tls-certificates/upstream/vault/tls.crt:/certs/vault.crt
       - ./tls-certificates/upstream/ca/tls.crt:/certs/tls.crt

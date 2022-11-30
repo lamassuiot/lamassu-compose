@@ -10,9 +10,6 @@ volumes:
 
 services:
   aws-connector:
-    extends:
-      file: common-service.yml
-      service: base-service
     container_name: aws-connector
     env_file:
       - .aws-connector.env
@@ -26,13 +23,12 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
       AMQP_SERVER_ENABLE_TLS: "true"
       AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
-      LAMASSU_CA_ADDRESS: ca:8085
+      LAMASSU_CA_ADDRESS: https://ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       CONNECTOR_TYPE: aws
       CONNECTOR_NAME: ${CONNECTOR_NAME}

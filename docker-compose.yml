@@ -27,8 +27,6 @@ services:
       - ./tls-certificates/upstream/api-gateway/tls.crt:/certs/upstream.crt:ro 
       - ./tls-certificates/upstream/api-gateway/tls.key:/certs/upstream.key:ro
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
-    depends_on:
-      - jaeger
     logging:
       driver: "json-file"
       options:

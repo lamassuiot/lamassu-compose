@@ -218,7 +218,7 @@ services:
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
       POSTGRES_DATABASE: dmsmanager
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
@@ -255,7 +255,7 @@ services:
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: devicemanager
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       MINIMUM_REENROLL_DAYS: ${DEVICE_MANAGER_MINIMUM_REENROLL_DAYS}
       LAMASSU_CA_ADDRESS: https://ca:8085
@@ -324,7 +324,7 @@ services:
       AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: alerts
       POSTGRES_HOSTNAME: database
@@ -366,7 +366,7 @@ services:
       AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: cloudproxy
       POSTGRES_HOSTNAME: database

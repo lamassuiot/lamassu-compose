@@ -20,11 +20,7 @@ function provision() {
 pushd data > /dev/null
 
 provision sys/auth
-provision sys/mounts/pki/lamassu/dev/_pki
-provision sys/mounts/pki/lamassu/dev/_internal
 provision sys/policy
 provision auth/approle/role
-provision pki/lamassu/dev/_internal/Lamassu-DMS-Enroller/roles
-provision pki/lamassu/dev/_internal/Lamassu-DMS-Enroller/root/generate
 
 popd > /dev/null

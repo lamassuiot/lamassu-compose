@@ -19,5 +19,6 @@
         "response_headers": {
             "Access-Control-Allow-Origin": "*"
         }
-    }
+    },
+    "enable_agent_tls_for_checks": true
 }

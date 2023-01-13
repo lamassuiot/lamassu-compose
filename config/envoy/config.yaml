@@ -17,6 +17,8 @@ static_resources:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
                 codec_type: auto
                 stat_prefix: ingress_http
+                http_protocol_options:
+                  accept_http_10: true
                 route_config:
                   virtual_hosts:
                     - name: backend
@@ -38,26 +40,6 @@ static_resources:
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
                 generate_request_id: true
-                tracing:
-                  provider:
-                    name: envoy.tracers.dynamic_ot
-                    typed_config:
-                      "@type": type.googleapis.com/envoy.config.trace.v3.DynamicOtConfig
-                      library: /usr/local/lib/libjaegertracing_plugin.so
-                      config:
-                        service_name: gateway
-                        sampler:
-                          type: const
-                          param: 1
-                        reporter:
-                          localAgentHostPort: jaeger:6831
-                        headers:
-                          jaegerDebugHeader: jaeger-debug-id  
-                          jaegerBaggageHeader: jaeger-baggage
-                          traceBaggageHeaderPrefix: uberctx-
-                        baggage_restrictions:
-                          denyBaggageOnInitializationFailure: false
-                          hostPort: ""
                 stat_prefix: ingress_http
                 forward_client_cert_details: "APPEND_FORWARD"
                 set_current_client_cert_details: 
@@ -66,12 +48,14 @@ static_resources:
                   - name: envoy.access_loggers.stdout
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                http_protocol_options:
+                  accept_http_10: true
                 route_config:
                   name: local_route
                   virtual_hosts:
                     - name: apis_ui
                       domains:
-                        - ${DOMAIN}
+                        - "*"
                       routes:
                         - match:
                             safe_regex:
@@ -95,14 +79,14 @@ static_resources:
                         - match:
                             safe_regex:
                               google_re2: {}
-                              regex: "\/api\/dmsenroller\/v1\/docs(.*|\/.*)*"
+                              regex: "\/api\/dmsmanager\/v1\/docs(.*|\/.*)*"
                           route:
                             regex_rewrite: 
                               pattern: 
                                 google_re2: {}
-                                regex: \/api\/dmsenroller\/
+                                regex: \/api\/dmsmanager\/
                               substitution: /
-                            cluster: api_dms_enroller_cluster
+                            cluster: api_dms_manager_cluster
                           typed_per_filter_config:
                             envoy.filters.http.ext_authz:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -175,16 +159,22 @@ static_resources:
                             cluster: api_device_manager_cluster
 
                         - match:
-                            prefix: "/api/dmsenroller/"
+                            prefix: "/api/dmsmanager/"
                           route:
                             prefix_rewrite: "/"
-                            cluster: api_dms_enroller_cluster
+                            cluster: api_dms_manager_cluster
 
                         - match:
                             prefix: "/api/cloudproxy/"
                           route:
                             prefix_rewrite: "/"
                             cluster: api_cloud_proxy_cluster
+
+                        - match:
+                            prefix: "/api/alerts/"
+                          route:
+                            prefix_rewrite: "/"
+                            cluster: api_alerts_cluster
 
                         - match:
                             prefix: "/"
@@ -201,7 +191,7 @@ static_resources:
 
                     - name: vault
                       domains:
-                        - "vault.${DOMAIN}"
+                        - "vault.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -217,7 +207,7 @@ static_resources:
 
                     - name: consul
                       domains:
-                        - "consul.${DOMAIN}"
+                        - "consul.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -234,28 +224,12 @@ static_resources:
 
                     - name: auth
                       domains:
-                        - "auth.${DOMAIN}"
+                        - "auth.*"
                       routes:
                         - match:
                             prefix: "/"
                           route:
                             cluster: auth_cluster
-                          typed_per_filter_config:
-                            envoy.filters.http.ext_authz:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
-                              disabled: true
-                            # envoy.filters.http.jwt_authn:
-                            #   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
-                            #   disabled: true
-
-                    - name: jaeger-tracing
-                      domains:
-                        - "tracing.${DOMAIN}"
-                      routes:
-                        - match:
-                            prefix: "/"
-                          route:
-                            cluster: jaeger_ui_cluster
                           typed_per_filter_config:
                             envoy.filters.http.ext_authz:
                               "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -298,7 +272,7 @@ static_resources:
                             prefix: "/"
                             headers: 
                               - name: ":authority"
-                                exact_match: "tracing.${DOMAIN}"
+                                exact_match: "tracing.*"
                         - match:
                             prefix: "/api/devmanager/.well-known/est"
                         - match:
@@ -329,14 +303,14 @@ static_resources:
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: lamassu-ca
+        cluster_name: ca
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: lamassu-ca
-                      port_value: 8087
+                      address: ca
+                      port_value: 8085
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -362,14 +336,14 @@ static_resources:
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: lamassu-device-manager
+        cluster_name: device-manager
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: lamassu-device-manager
-                      port_value: 8089
+                      address: device-manager
+                      port_value: 8085
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -390,18 +364,18 @@ static_resources:
                 private_key:
                   filename: /certs/upstream.key
           
-    - name: api_dms_enroller_cluster
+    - name: api_dms_manager_cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: lamassu-dms-enroller
+        cluster_name: dms-manager
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: lamassu-dms-enroller
+                      address: dms-manager
                       port_value: 8085
       health_checks:
         - interval: 60s
@@ -435,7 +409,41 @@ static_resources:
                   address:
                     socket_address:
                       address: cloud-proxy
-                      port_value: 8081
+                      port_value: 8085
+      health_checks:
+        - interval: 60s
+          timeout: 2s
+          interval_jitter: 1s
+          unhealthy_threshold: 1
+          healthy_threshold: 1
+          http_health_check:
+            path: /v1/health
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          # mTLS config between API_GW and UPSTREAM Service
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /certs/upstream.crt
+                private_key:
+                  filename: /certs/upstream.key
+
+    - name: api_alerts_cluster
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: cloud_connector
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: alerts
+                      port_value: 8085
+
       health_checks:
         - interval: 60s
           timeout: 2s
@@ -524,19 +532,6 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
 
-    - name: jaeger_ui_cluster
-      connect_timeout: 0.25s
-      type: STRICT_DNS
-      load_assignment:
-        cluster_name: jaeger_ui_cluster
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: jaeger
-                      port_value: 16686
-
     - name: ocsp_cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
@@ -548,7 +543,7 @@ static_resources:
                   address:
                     socket_address:
                       address: ocsp
-                      port_value: 9098
+                      port_value: 8085
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:

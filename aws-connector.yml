@@ -1,0 +1,49 @@
+version: '3'
+
+networks:
+  default:
+    name: lamassu-iot-network
+    external: true
+
+volumes:
+  aws_data:
+
+services:
+  aws-connector:
+    container_name: aws-connector
+    env_file:
+      - .aws-connector.env
+    image: ${LAMASSU_AWS_CONNECTOR_DOCKER_IMAGE}
+    environment:
+      SERVICE_NAME: aws-connector
+      DEBUG_MODE: ${DEBUG_MODE}
+      PORT: 8085
+      PROTOCOL: https
+      CERT_FILE: /certs/tls.crt
+      KEY_FILE: /certs/tls.key
+      MUTUAL_TLS_ENABLED: "true"
+      MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
+      AMQP_SERVER_PORT: 5671
+      AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
+      LAMASSU_CA_ADDRESS: https://ca:8085
+      LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
+      CONNECTOR_TYPE: aws
+      CONNECTOR_NAME: ${CONNECTOR_NAME}
+      CONNECTOR_PERSISTENCE_DIR: /app/pv
+      CONSUL_PROTOCOL: https
+      CONSUL_HOST: consul-server
+      CONSUL_PORT: 8501
+      CONSUL_CA: /certs/internal-ca.crt
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      AWS_SQS_INBOUND_QUEUE_NAME: lamassuResponse
+    volumes:
+      - aws_data:/app/pv
+      - ./tls-certificates/upstream/aws-connector/tls.crt:/certs/tls.crt
+      - ./tls-certificates/upstream/aws-connector/tls.key:/certs/tls.key
+      - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
+    restart: on-failure

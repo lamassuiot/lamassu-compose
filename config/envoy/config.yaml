@@ -42,6 +42,7 @@ static_resources:
                 generate_request_id: true
                 stat_prefix: ingress_http
                 forward_client_cert_details: "APPEND_FORWARD"
+                strip_any_host_port: true
                 set_current_client_cert_details: 
                   cert: true
                 access_log:

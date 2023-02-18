@@ -7,3 +7,5 @@ vault-credentials.json
 docker-compose-dev.yml
 downstream
 vault-ca-credentials.json
+.aws-connector.env
+azure-connector.yml

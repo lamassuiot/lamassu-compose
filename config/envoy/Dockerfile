@@ -22,7 +22,7 @@ RUN echo "4a7d17d4724ee890490bcd6cfdedb12a02316a3d33214348d30979abd201f1ca /usr/
 RUN apt-get update && \
     apt-get install gettext -y
 
-COPY config.yaml /tmpl/envoy.yaml.tmpl
+COPY config.yaml /etc/envoy.yaml
 COPY docker-entrypoint.sh /
 
 RUN chmod 500 /docker-entrypoint.sh

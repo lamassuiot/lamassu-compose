@@ -42,6 +42,7 @@ static_resources:
                 generate_request_id: true
                 stat_prefix: ingress_http
                 forward_client_cert_details: "APPEND_FORWARD"
+                strip_any_host_port: true
                 set_current_client_cert_details: 
                   cert: true
                 access_log:
@@ -55,7 +56,7 @@ static_resources:
                   virtual_hosts:
                     - name: apis_ui
                       domains:
-                        - ${DOMAIN}
+                        - "*"
                       routes:
                         - match:
                             safe_regex:
@@ -191,7 +192,7 @@ static_resources:
 
                     - name: vault
                       domains:
-                        - "vault.${DOMAIN}"
+                        - "vault.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -207,7 +208,7 @@ static_resources:
 
                     - name: consul
                       domains:
-                        - "consul.${DOMAIN}"
+                        - "consul.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -224,7 +225,7 @@ static_resources:
 
                     - name: auth
                       domains:
-                        - "auth.${DOMAIN}"
+                        - "auth.*"
                       routes:
                         - match:
                             prefix: "/"
@@ -272,7 +273,7 @@ static_resources:
                             prefix: "/"
                             headers: 
                               - name: ":authority"
-                                exact_match: "tracing.${DOMAIN}"
+                                exact_match: "tracing.*"
                         - match:
                             prefix: "/api/devmanager/.well-known/est"
                         - match:

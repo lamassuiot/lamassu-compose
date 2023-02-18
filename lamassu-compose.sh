@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LAMASSU_COMPOSE_GITHUB_TAG=v1.1.0
+LAMASSU_COMPOSE_GITHUB_TAG=v2.0.0
 LAMASSU_SIMULATION_TOOLS_GITHUB_TAG=b669c23
 
 BLUE='\033[0;34m'
@@ -131,17 +131,17 @@ echo -e "\n${BLUE}3) Cloning Lamassu Compose${NOCOLOR}"
 git clone --quiet --branch $LAMASSU_COMPOSE_GITHUB_TAG https://github.com/lamassuiot/lamassu-compose > /dev/null
 cd lamassu-compose
 
-export LAMASSU_UI_DOCKER_IMAGE="lamassuiot/lamassu-ui-dev:latest"
-export LAMASSU_DMS_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-dms-manager-dev:latest"
-export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-device-manager-dev:latest"
-export LAMASSU_DB_DOCKER_IMAGE="lamassuiot/lamassu-db-dev:latest"
-export LAMASSU_CA_DOCKER_IMAGE="lamassuiot/lamassu-ca-dev:latest"
-export LAMASSU_CLOUD_PROXY_DOCKER_IMAGE="lamassuiot/lamassu-cloud-proxy-dev:latest"
-export LAMASSU_OCSP_DOCKER_IMAGE="lamassuiot/lamassu-ocsp-dev:latest"
-export LAMASSU_ALERTS_DOCKER_IMAGE="lamassuiot/lamassu-alerts-dev:latest"
-export LAMASSU_GATEWAY_DOCKER_IMAGE="lamassuiot/lamassu-gateway-dev:latest"
-export LAMASSU_AUTH_DOCKER_IMAGE="lamassuiot/lamassu-auth-dev:latest"
-export LAMASSU_RABBITMQ_DOCKER_IMAGE="lamassuiot/lamassu-rabbitmq-dev:latest"
+export LAMASSU_UI_DOCKER_IMAGE="lamassuiot/lamassu-ui:latest"
+export LAMASSU_DMS_MANAGER_DOCKER_IMAGE="lamassuiot/lamassu-dms-manager:latest"
+export LAMASSU_DEVICE_MANAGER_DOCKER_IMAGE="lamassuiot/lamassuice-manager:latest"
+export LAMASSU_DB_DOCKER_IMAGE="lamassuiot/lamassu-db:latest"
+export LAMASSU_CA_DOCKER_IMAGE="lamassuiot/lamassu-ca:latest"
+export LAMASSU_CLOUD_PROXY_DOCKER_IMAGE="lamassuiot/lamassu-cloud-proxy:latest"
+export LAMASSU_OCSP_DOCKER_IMAGE="lamassuiot/lamassu-ocsp:latest"
+export LAMASSU_ALERTS_DOCKER_IMAGE="lamassuiot/lamassu-alerts:latest"
+export LAMASSU_GATEWAY_DOCKER_IMAGE="lamassuiot/lamassu-gateway:latest"
+export LAMASSU_AUTH_DOCKER_IMAGE="lamassuiot/lamassu-auth:latest"
+export LAMASSU_RABBITMQ_DOCKER_IMAGE="lamassuiot/lamassu-rabbitmq:latest"
 
 echo -e "\n${BLUE}4) Generating Databse credentials${NOCOLOR}"
 

@@ -8,7 +8,6 @@ networks:
 volumes:
   consul_server_data:
   postgres_data:
-  jaeger_tracing_data:
 
 services:
   api-gateway:
@@ -28,8 +27,6 @@ services:
       - ./tls-certificates/upstream/api-gateway/tls.crt:/certs/upstream.crt:ro 
       - ./tls-certificates/upstream/api-gateway/tls.key:/certs/upstream.key:ro
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt:ro
-    depends_on:
-      - jaeger
     logging:
       driver: "json-file"
       options:
@@ -68,23 +65,6 @@ services:
       - "--log-format=text"
       - "--ignore=.*"
       - "/opa/policy.rego"
-    logging:
-      driver: "json-file"
-      options:
-        max-file: ${MAX_LOG_FILES}
-        max-size: ${MAX_LOG_FILE_SIZE}
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.30.0
-    container_name: jaeger
-    environment:
-      SPAN_STORAGE_TYPE: badger
-      BADGER_EPHEMERAL: "false"
-      BADGER_DIRECTORY_VALUE: /badger/data
-    volumes:
-      - jaeger_tracing_data:/badger
-    # ports:
-    #   - 14268:14268
     logging:
       driver: "json-file"
       options:
@@ -188,24 +168,28 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
       OCSP_URL: https://${DOMAIN}/api/ocsp/
+      VAULT_AUTO_UNSEAL_ENABLED: "true"
+      VAULT_UNSEAL_KEYS_FILE: /config/vault-credentials.json
       VAULT_ADDRESS: https://vault:8200
       VAULT_ROLE_ID: ${CA_VAULT_ROLE_ID}
       VAULT_SECRET_ID: ${CA_VAULT_SECRET_ID}
       VAULT_CA: /certs/vault.crt
       VAULT_PKI_CA_PATH: pki/lamassu/dev/
-      VAULT_UNSEAL_KEYS_FILE: /config/vault-credentials.json
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: ca
       POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       ENGINE: vault
+      ABOUT_TO_EXPIRE_DAYS: "90"
+      PERIODIC_SCAN_ENABLED: "true"
+      PERIODIC_SCAN_CRON: "0 * * * *"
     volumes:
       - ./tls-certificates/upstream/vault/tls.crt:/certs/vault.crt
       - ./tls-certificates/upstream/ca/tls.crt:/certs/tls.crt
@@ -213,6 +197,7 @@ services:
       - ./vault-ca-credentials.json:/config/vault-credentials.json
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:
@@ -231,23 +216,24 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
       POSTGRES_DATABASE: dmsmanager
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
-      LAMASSU_CA_ADDRESS: ca:8085
+      LAMASSU_CA_ADDRESS: https://ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
     volumes:
       - ./tls-certificates/upstream/dms-manager/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/dms-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:
@@ -266,26 +252,27 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
       POSTGRES_HOSTNAME: database
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: devicemanager
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       MINIMUM_REENROLL_DAYS: ${DEVICE_MANAGER_MINIMUM_REENROLL_DAYS}
-      LAMASSU_CA_ADDRESS: ca:8085
+      LAMASSU_CA_ADDRESS: https://ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
-      LAMASSU_DMS_MANAGER_ADDRESS: dms-manager:8085
+      LAMASSU_DMS_MANAGER_ADDRESS: https://dms-manager:8085
       LAMASSU_DMS_MANAGER_CERT_FILE: /certs/internal-ca.crt
     volumes:
       - ./tls-certificates/upstream/device-manager/tls.crt:/certs/tls.crt
       - ./tls-certificates/upstream/device-manager/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:
@@ -304,12 +291,12 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
-      LAMASSU_CA_ADDRESS: ca:8085
+      LAMASSU_CA_ADDRESS: https://ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       SIGNER_CERT: /certs/signer.crt
       SIGNER_KEY: /certs/signer.key
@@ -320,6 +307,7 @@ services:
       - ./tls-certificates/downstream/tls.key:/certs/signer.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:
@@ -338,12 +326,12 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: alerts
       POSTGRES_HOSTNAME: database
@@ -362,6 +350,7 @@ services:
       - ./tls-certificates/upstream/alerts/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:
@@ -380,12 +369,12 @@ services:
       KEY_FILE: /certs/tls.key
       MUTUAL_TLS_ENABLED: "true"
       MUTUAL_TLS_CLIENT_CA: /certs/internal-ca.crt
-      AMQP_SERVER_HOST: rabbitmq
+      AMQP_SERVER_USE_BASIC_AUTH: "false"
+      AMQP_SERVER_ENABLE_TLS: "true"
+      AMQP_SERVER_HOST: rabbitmq      
       AMQP_SERVER_PORT: 5671
       AMQP_SERVER_CA_CERT: /certs/internal-ca.crt
-      DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT}
-      JAEGER_EXPORTER_URL: http://jaeger:14268/api/traces
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USERNAME: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DATABASE: cloudproxy
       POSTGRES_HOSTNAME: database
@@ -394,7 +383,7 @@ services:
       CONSUL_HOST: consul-server
       CONSUL_PORT: 8501
       CONSUL_CA: /certs/internal-ca.crt
-      LAMASSU_CA_ADDRESS: ca:8085
+      LAMASSU_CA_ADDRESS: https://ca:8085
       LAMASSU_CA_CERT_FILE: /certs/internal-ca.crt
       LAMASSU_CONNECTORS_MUTUAL_TLS: "true"
       LAMASSU_CONNECTORS_CERT_FILE: /certs/internal-ca.crt
@@ -403,6 +392,7 @@ services:
       - ./tls-certificates/upstream/cloud-proxy/tls.key:/certs/tls.key
       - ./tls-certificates/upstream/ca.crt:/certs/internal-ca.crt
     restart: on-failure
+    tty: true
     logging:
       driver: "json-file"
       options:

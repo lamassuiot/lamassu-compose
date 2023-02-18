@@ -13,6 +13,10 @@ action_allowed {
 }
 
 action_allowed {
+  startswith(http_request.path, "/api/dmsmanager/.well-known/")
+}
+
+action_allowed {
   allowed_methods := ["OPTIONS"]
   allowed_methods[_] == http_request.method 
 }
@@ -24,7 +28,7 @@ action_allowed {
 action_allowed {
   allowed_methods := ["GET", "POST"]
   allowed_methods[_] == http_request.method 
-  startswith(http_request.path, "/api/dmsenroller/")
+  startswith(http_request.path, "/api/dmsmanager/")
   token.payload.realm_access.roles[_] == "operator"
 }
 

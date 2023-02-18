@@ -276,6 +276,8 @@ static_resources:
                         - match:
                             prefix: "/api/devmanager/.well-known/est"
                         - match:
+                            prefix: "/api/dmsmanager/.well-known/est"
+                        - match:
                             prefix: "/api/"
                           requires:
                             provider_name: "lamassu_oidc_provider"
@@ -548,3 +550,10 @@ static_resources:
         name: envoy.transport_sockets.tls
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          # mTLS config between API_GW and UPSTREAM Service
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /certs/upstream.crt
+                private_key:
+                  filename: /certs/upstream.key

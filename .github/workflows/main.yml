@@ -39,7 +39,7 @@ jobs:
           context: config/envoy
           push: true
           tags: |
-            lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_tag }}
+            lamassuiot/lamassu-gateway:${{ steps.tag_version.outputs.new_version }}
             lamassuiot/lamassu-gateway:latest
       
       - name: Build lamassu-auth Docker image
@@ -48,7 +48,7 @@ jobs:
           context: config/auth
           push: true
           tags: |
-            lamassuiot/lamassu-auth:${{ steps.tag_version.outputs.new_tag }}
+            lamassuiot/lamassu-auth:${{ steps.tag_version.outputs.new_version }}
             lamassuiot/lamassu-auth:latest
       
       - name: Build lamassu-rabbitmq Docker image
@@ -57,5 +57,5 @@ jobs:
           context: config/rabbitmq
           push: true
           tags: |
-            lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_tag }}
+            lamassuiot/lamassu-rabbitmq:${{ steps.tag_version.outputs.new_version }}
             lamassuiot/lamassu-rabbitmq:latest
